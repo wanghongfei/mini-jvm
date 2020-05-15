@@ -1,0 +1,8 @@
+.idea
+*.iml
+vendor/
+_vendor*
+logs/
+bin/
+out/
+go.sum
