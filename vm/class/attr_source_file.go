@@ -11,6 +11,10 @@ type SourceFileAttr struct {
 	SourceFileIndex uint16
 }
 
+func (s *SourceFileAttr) String() string {
+	return "SourceFile"
+}
+
 func ReadSourceFileAttr(reader io.Reader) (*SourceFileAttr, error) {
 	length, err := utils.ReadInt32(reader)
 	if nil != err {

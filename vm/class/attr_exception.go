@@ -10,6 +10,9 @@ type ExceptionAttr struct {
 	ExceptionIndexTable []uint16
 }
 
+func (e *ExceptionAttr) String() string {
+	return "Exception"
+}
 
 func ReadExceptionAttr(reader io.Reader) (*ExceptionAttr, error) {
 	panic("implement me")

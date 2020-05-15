@@ -13,10 +13,18 @@ type FieldInfo struct {
 
 	AttrCount uint16
 	Attrs []interface{}
+
+	// 所在的class定义文件
+	DefFile *DefFile
+}
+
+func (f *FieldInfo) String() string {
+	return f.DefFile.ConstPool[f.NameIndex].(*Utf8InfoConst).String()
 }
 
 func (c *DefFile) ReadFieldInfo(reader io.Reader) (*FieldInfo, error) {
 	info := new(FieldInfo)
+	info.DefFile = c
 
 	accessFlags, err := utils.ReadInt16(reader)
 	if nil != err {

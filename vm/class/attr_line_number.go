@@ -14,6 +14,10 @@ type LineNumberAttr struct {
 	LineNumberTable []*LineNumberInfo
 }
 
+func (l *LineNumberAttr) String() string {
+	return "LineNumber"
+}
+
 type LineNumberInfo struct {
 	StartPc uint16
 	LineNumber uint16

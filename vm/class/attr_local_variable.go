@@ -14,6 +14,10 @@ type LocalVariableAttr struct {
 	LocalVariableInfo []*LocalVariableTable
 }
 
+func (l *LocalVariableAttr) String() string {
+	return "LovalVariable"
+}
+
 type LocalVariableTable struct {
 	StartPc uint16
 	Length uint16

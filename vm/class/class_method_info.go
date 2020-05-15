@@ -13,6 +13,13 @@ type MethodInfo struct {
 
 	AttrCount uint16
 	Attrs []interface{}
+
+	// 所在的class定义文件
+	DefFile *DefFile
+}
+
+func (f *MethodInfo) String() string {
+	return f.DefFile.ConstPool[f.NameIndex].(*Utf8InfoConst).String()
 }
 
 func (c *DefFile) ReadMethodInfo(reader io.Reader) (*MethodInfo, error) {
@@ -48,6 +55,7 @@ func (c *DefFile) ReadMethodInfo(reader io.Reader) (*MethodInfo, error) {
 	}
 
 	return &MethodInfo{
+		DefFile:         c,
 		AccessFlags:     flags,
 		NameIndex:       nameIndex,
 		DescriptorIndex: descriptorIndex,

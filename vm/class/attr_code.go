@@ -25,6 +25,10 @@ type CodeAttr struct {
 	Attrs []interface{}
 }
 
+func (c *CodeAttr) String() string {
+	return "Code"
+}
+
 type ExceptionTable struct {
 	StartPc uint16
 	EndPc uint16

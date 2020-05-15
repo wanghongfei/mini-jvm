@@ -11,6 +11,10 @@ type ConstantValueAttr struct {
 	ConstantValueIndex uint16
 }
 
+func (c *ConstantValueAttr) String() string {
+	return "ConstantValue"
+}
+
 func ReadConstantValueAttr(reader io.Reader) (*ConstantValueAttr, error) {
 	length, err := utils.ReadInt32(reader)
 	if nil != err {
