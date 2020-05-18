@@ -29,19 +29,19 @@ func NewMethodArea(classpaths []string) (*MethodArea, error) {
 
 // 从classpath中加载一个类
 // fullname: 全限定性名
-func (m *MethodArea) LoadClass(fullyQualifiedName string) error {
+func (m *MethodArea) LoadClass(fullyQualifiedName string) (*class.DefFile, error) {
 	filepath, err := m.findClassFile(fullyQualifiedName)
 	if nil != err {
-		return err
+		return nil, err
 	}
 
 	defFile, err := class.LoadClassFile(filepath)
 	if nil != err {
-		return fmt.Errorf("unabled to load class %s: %w", fullyQualifiedName, err)
+		return nil, fmt.Errorf("unabled to load class %s: %w", fullyQualifiedName, err)
 	}
 
 	m.ClassMap[fullyQualifiedName] = defFile
-	return nil
+	return defFile, nil
 }
 
 func (m *MethodArea) findClassFile(fullyQualifiedName string) (string, error) {

@@ -10,12 +10,12 @@ func TestMethodArea_LoadClass(t *testing.T) {
 	if nil != err {
 		t.Fatal(err)
 	}
-	err = ma.LoadClass("Hello")
+	_, err = ma.LoadClass("Hello")
 	if nil != err {
 		t.Fatal(err)
 	}
 
-	err = ma.LoadClass("com/fh/vo/Student")
+	_, err = ma.LoadClass("com/fh/vo/Student")
 	if nil != err {
 		t.Fatal(err)
 	}
