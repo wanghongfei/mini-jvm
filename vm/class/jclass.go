@@ -219,6 +219,13 @@ func readConstPool(bufReader io.Reader, cpCount int) ([]interface{}, error) {
 			}
 			cpInfos = append(cpInfos, info)
 
+		case 8:
+			info, err := ReadStringInfoConst(bufReader, tag)
+			if nil != err {
+				return nil, err
+			}
+			cpInfos = append(cpInfos, info)
+
 		case 9:
 			info, err := ReadFieldRefConst(bufReader, tag)
 			if nil != err {
