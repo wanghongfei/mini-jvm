@@ -20,7 +20,7 @@ type MiniJvm struct {
 }
 
 type ExecutionEngine interface {
-	Execute(file *class.DefFile) error
+	Execute(file *class.DefFile, methodName string) error
 }
 
 func NewMiniJvm(mainClass string, classPaths[] string) (*MiniJvm, error) {
@@ -54,9 +54,9 @@ func (m *MiniJvm) executeMain() error {
 		return err
 	}
 
-	// todo 执行
-	log.Printf("%+v\n", mainClassDef)
-	return m.ExecutionEngine.Execute(mainClassDef)
+	// 执行
+	log.Printf("main class info: %+v\n", mainClassDef)
+	return m.ExecutionEngine.Execute(mainClassDef, "main")
 }
 
 func (m *MiniJvm) findDefClass(className string) (*class.DefFile, error) {

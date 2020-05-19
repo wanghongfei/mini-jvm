@@ -1,0 +1,24 @@
+package vm
+
+const (
+	nop byte = 0x00
+
+	iconst0 = 0x03
+	iconst1 = 0x04
+	iconst2 = 0x05
+
+	istore0 = 0x3b
+	istore1 = 0x3c
+	istore2 = 0x3d
+	istore3 = 0x3e
+
+	iload0 = 0x1a
+	iload1 = 0x1b
+	iload2 = 0x1c
+	iload3 = 0x1d
+
+	iadd = 0x60
+
+	emptyreturn = 0xb1
+	ireturn = 0xac
+)
