@@ -58,6 +58,15 @@ func (c *DefFile) ReadAttr(reader io.Reader) (interface{}, error) {
 		}
 
 		return srcAttr, nil
+
+	} else if "StackMapTable" == attrName {
+		// 跳过此属性
+		err := c.skipAttr(reader)
+		if nil != err {
+			return nil, fmt.Errorf("failed to skip StackMapTable attr: %w", err)
+		}
+
+		return struct{}{}, nil
 	}
 
 	return nil, fmt.Errorf("unsupported attr type '%s'", attrName)
@@ -70,4 +79,17 @@ func (c *DefFile) GetFromConstPool(index int) (interface{}, error) {
 	}
 
 	return c.ConstPool[index], nil
+}
+
+func (c *DefFile) skipAttr(reader io.Reader) error {
+	attrLen, err := utils.ReadInt32(reader)
+	if nil != err {
+		return fmt.Errorf("failed to read skip len: %w", err)
+	}
+
+	for ix := 0; ix < int(attrLen); ix++ {
+		utils.ReadInt8(reader)
+	}
+
+	return nil
 }
