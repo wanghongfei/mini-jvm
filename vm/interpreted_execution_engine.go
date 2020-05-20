@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/wanghongfei/mini-jvm/vm/class"
+	"strings"
 )
 
 // 解释执行引擎
@@ -17,7 +18,7 @@ type InterpretedExecutionEngine struct {
 }
 
 
-func (i *InterpretedExecutionEngine) Execute(def *class.DefFile, methodName string) error {
+func (i *InterpretedExecutionEngine) Execute(def *class.DefFile, methodName string, lastFrame *MethodStackFrame) error {
 	// 查找方法
 	method, err := i.findMethod(def, methodName)
 	if nil != err {
@@ -32,9 +33,57 @@ func (i *InterpretedExecutionEngine) Execute(def *class.DefFile, methodName stri
 
 	// 创建栈帧
 	frame := newMethodStackFrame(int(codeAttr.MaxStack), int(codeAttr.MaxLocals))
-	// 压栈
-	i.methodStack.Push(frame)
 
+	// 如果没有上层栈帧
+	if nil == lastFrame {
+		// 说明是main方法
+		// todo 暂时不保存参数
+
+	} else {
+		// 取出方法描述符
+		descriptor := def.ConstPool[method.DescriptorIndex].(*class.Utf8InfoConst).String()
+		// 解析描述符
+		argList, _ := i.parseDescriptor(descriptor)
+		// 将参数保存到新栈帧的本地变量表中
+		for ix, arg := range argList {
+			// 是int参数
+			if "I" == arg {
+				// 从上一个栈帧中出栈, 保存到新栈帧的localVarTable中
+				op, _ := lastFrame.opStack.Pop()
+				frame.localVariablesTable[ix] = op
+
+			} else {
+				return fmt.Errorf("unsupported argument descriptor '%s' in '%s'", arg, descriptor)
+			}
+		}
+	}
+
+
+
+	// 执行字节码
+	return i.executeInFrame(def, codeAttr, frame, lastFrame)
+}
+
+// 解析方法描述符;
+// ret1: 参数列表
+// ret2: 返回类型
+func (i *InterpretedExecutionEngine) parseDescriptor(descriptor string) ([]string, string) {
+	// 提取参数列表
+	argDescEndIndex := strings.Index(descriptor, ")")
+	argDesc := descriptor[1:argDescEndIndex]
+
+	// 解析参数列表
+	argList := make([]string, 0, 5)
+	for _, ch := range argDesc {
+		argList = append(argList, string(ch))
+	}
+
+	retDesc := descriptor[argDescEndIndex + 1:]
+
+	return argList, retDesc
+}
+
+func (i *InterpretedExecutionEngine) executeInFrame(def *class.DefFile, codeAttr *class.CodeAttr, frame *MethodStackFrame, lastFrame *MethodStackFrame) error {
 	for {
 		// 取出pc指向的字节码
 		byteCode := codeAttr.Code[frame.pc]
@@ -65,8 +114,11 @@ func (i *InterpretedExecutionEngine) Execute(def *class.DefFile, methodName stri
 			top, _ := frame.opStack.Pop()
 			frame.localVariablesTable[3] = top
 
-		case iload1:
+		case iload0:
 			// 将第1个slot中的值压栈
+			frame.opStack.Push(frame.localVariablesTable[0])
+		case iload1:
+			// 将第2个slot中的值压栈
 			frame.opStack.Push(frame.localVariablesTable[1])
 		case iload2:
 			frame.opStack.Push(frame.localVariablesTable[2])
@@ -83,6 +135,20 @@ func (i *InterpretedExecutionEngine) Execute(def *class.DefFile, methodName stri
 			num := codeAttr.Code[frame.pc + 1]
 			frame.opStack.Push(uint32(num))
 			frame.pc++
+
+		case sipush:
+			// 将一个短整型常量(-32768~32767)推送至栈顶
+			twoByteNum := codeAttr.Code[frame.pc + 1 : frame.pc + 1 + 2]
+			frame.pc += 2
+
+			var op int16
+			err := binary.Read(bytes.NewBuffer(twoByteNum), binary.BigEndian, &op)
+			if nil != err {
+				return fmt.Errorf("failed to read offset for sipush: %w", err)
+			}
+
+			// todo 限制: 不支持负数
+			frame.opStack.Push(uint32(op))
 
 		case ificmpgt:
 			// 比较栈顶两int型数值大小, 当结果大于0时跳转
@@ -126,6 +192,35 @@ func (i *InterpretedExecutionEngine) Execute(def *class.DefFile, methodName stri
 
 			frame.pc = frame.pc + int(offset) - 1
 
+		case invokestatic:
+			// 调用静态方法
+			twoByteNum := codeAttr.Code[frame.pc + 1 : frame.pc + 1 + 2]
+			frame.pc += 2
+
+			var methodRefCpIndex uint16
+			err := binary.Read(bytes.NewBuffer(twoByteNum), binary.BigEndian, &methodRefCpIndex)
+			if nil != err {
+				return fmt.Errorf("failed to read method_ref_cp_index for 'invokestatic': %w", err)
+			}
+
+			// 取出引用的方法
+			methodRef := def.ConstPool[methodRefCpIndex].(*class.MethodRefConstInfo)
+			nameAndType := def.ConstPool[methodRef.NameAndTypeIndex].(*class.NameAndTypeConst)
+			methodName := def.ConstPool[nameAndType.NameIndex].(*class.Utf8InfoConst).String()
+
+			// 调用
+			err = i.Execute(def, methodName, frame)
+			if nil != err {
+				return fmt.Errorf("failed to execute 'invokestatic': %w", err)
+			}
+
+		case ireturn:
+			// 当前栈出栈, 值压如上一个栈
+			op, _ := frame.opStack.Pop()
+			lastFrame.opStack.Push(op)
+
+			exitLoop = true
+
 		case emptyreturn:
 			// 返回
 			exitLoop = true
@@ -141,9 +236,6 @@ func (i *InterpretedExecutionEngine) Execute(def *class.DefFile, methodName stri
 		// 移动程序计数器
 		frame.pc++
 	}
-
-
-	i.methodStack.Pop()
 
 	return nil
 }

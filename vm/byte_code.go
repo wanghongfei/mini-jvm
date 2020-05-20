@@ -13,6 +13,7 @@ const (
 	istore3 = 0x3e
 
 	bipush = 0x10
+	sipush = 0x11
 
 	iload0 = 0x1a
 	iload1 = 0x1b
@@ -27,5 +28,8 @@ const (
 	bgoto = 0xa7
 
 	emptyreturn = 0xb1
+
+	invokestatic = 0xb8
+
 	ireturn = 0xac
 )

@@ -9,7 +9,7 @@ import (
 func main() {
 	log.SetOutput(os.Stdout)
 
-	miniJvm, err := vm.NewMiniJvm("Hello", []string{"out/"})
+	miniJvm, err := vm.NewMiniJvm("HelloMethod", []string{"out/"})
 	if nil != err {
 		log.Printf("%+v", err)
 		os.Exit(1)
