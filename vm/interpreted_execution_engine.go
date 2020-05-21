@@ -4,8 +4,9 @@ import (
 	"bytes"
 	"encoding/binary"
 	"encoding/hex"
-	"errors"
 	"fmt"
+	"github.com/wanghongfei/mini-jvm/vm/accflag"
+	"github.com/wanghongfei/mini-jvm/vm/bcode"
 	"github.com/wanghongfei/mini-jvm/vm/class"
 	"strings"
 )
@@ -14,7 +15,7 @@ import (
 type InterpretedExecutionEngine struct {
 	miniJvm *MiniJvm
 
-	methodStack *MethodStack
+	// methodStack *MethodStack
 }
 
 
@@ -23,6 +24,23 @@ func (i *InterpretedExecutionEngine) Execute(def *class.DefFile, methodName stri
 	method, err := i.findMethod(def, methodName)
 	if nil != err {
 		return fmt.Errorf("failed to find method: %w", err)
+	}
+
+	if "print" == methodName {
+		fmt.Errorf("")
+	}
+
+	// 解析访问标记
+	flagMap := accflag.ParseAccFlags(method.AccessFlags)
+	if _, ok := flagMap[accflag.Native]; ok {
+		// 特殊处理输出函数, 因为System.out太复杂了
+		if "print" == methodName {
+			data, _ := lastFrame.opStack.Pop()
+			fmt.Println(data)
+			return nil
+		}
+
+		return fmt.Errorf("native method '%s' is unsupported", methodName)
 	}
 
 	// 提取code属性
@@ -40,6 +58,8 @@ func (i *InterpretedExecutionEngine) Execute(def *class.DefFile, methodName stri
 		// todo 暂时不保存参数
 
 	} else {
+		// 传参
+		
 		// 取出方法描述符
 		descriptor := def.ConstPool[method.DescriptorIndex].(*class.Utf8InfoConst).String()
 		// 解析描述符
@@ -92,51 +112,51 @@ func (i *InterpretedExecutionEngine) executeInFrame(def *class.DefFile, codeAttr
 
 		// 执行
 		switch byteCode {
-		case iconst0:
+		case bcode.Iconst0:
 			// 将x压栈
 			frame.opStack.Push(0)
-		case iconst1:
+		case bcode.Iconst1:
 			frame.opStack.Push(1)
-		case iconst2:
+		case bcode.Iconst2:
 			frame.opStack.Push(2)
 
 
-		case istore1:
+		case bcode.Istore1:
 			// 将栈顶int型数值存入第二个本地变量
 			top, _ := frame.opStack.Pop()
 			frame.localVariablesTable[1] = top
-		case istore2:
+		case bcode.Istore2:
 			// 将栈顶int型数值存入第3个本地变量
 			top, _ := frame.opStack.Pop()
 			frame.localVariablesTable[2] = top
-		case istore3:
+		case bcode.Istore3:
 			// 将栈顶int型数值存入第4个本地变量
 			top, _ := frame.opStack.Pop()
 			frame.localVariablesTable[3] = top
 
-		case iload0:
+		case bcode.Iload0:
 			// 将第1个slot中的值压栈
 			frame.opStack.Push(frame.localVariablesTable[0])
-		case iload1:
+		case bcode.Iload1:
 			// 将第2个slot中的值压栈
 			frame.opStack.Push(frame.localVariablesTable[1])
-		case iload2:
+		case bcode.Iload2:
 			frame.opStack.Push(frame.localVariablesTable[2])
 
-		case iadd:
+		case bcode.Iadd:
 			// 取出栈顶2元素，相加，入栈
 			op1, _ := frame.opStack.Pop()
 			op2, _ := frame.opStack.Pop()
 			sum := op1 + op2
 			frame.opStack.Push(sum)
 
-		case bipush:
+		case bcode.Bipush:
 			// 将单字节的常量值(-128~127)推送至栈顶
 			num := codeAttr.Code[frame.pc + 1]
 			frame.opStack.Push(uint32(num))
 			frame.pc++
 
-		case sipush:
+		case bcode.Sipush:
 			// 将一个短整型常量(-32768~32767)推送至栈顶
 			twoByteNum := codeAttr.Code[frame.pc + 1 : frame.pc + 1 + 2]
 			frame.pc += 2
@@ -150,7 +170,7 @@ func (i *InterpretedExecutionEngine) executeInFrame(def *class.DefFile, codeAttr
 			// todo 限制: 不支持负数
 			frame.opStack.Push(uint32(op))
 
-		case ificmpgt:
+		case bcode.Ificmpgt:
 			// 比较栈顶两int型数值大小, 当结果大于0时跳转
 
 			// 待比较的数
@@ -173,7 +193,7 @@ func (i *InterpretedExecutionEngine) executeInFrame(def *class.DefFile, codeAttr
 			}
 
 
-		case iinc:
+		case bcode.Iinc:
 			// 将第op1个slot的变量增加op2
 			op1 := codeAttr.Code[frame.pc + 1]
 			op2 := codeAttr.Code[frame.pc + 2]
@@ -181,7 +201,7 @@ func (i *InterpretedExecutionEngine) executeInFrame(def *class.DefFile, codeAttr
 
 			frame.localVariablesTable[op1] = frame.localVariablesTable[op1] + uint32(op2)
 
-		case bgoto:
+		case bcode.Goto:
 			// 跳转
 			twoByteNum := codeAttr.Code[frame.pc + 1 : frame.pc + 1 + 2]
 			var offset int16
@@ -192,7 +212,7 @@ func (i *InterpretedExecutionEngine) executeInFrame(def *class.DefFile, codeAttr
 
 			frame.pc = frame.pc + int(offset) - 1
 
-		case invokestatic:
+		case bcode.Invokestatic:
 			// 调用静态方法
 			twoByteNum := codeAttr.Code[frame.pc + 1 : frame.pc + 1 + 2]
 			frame.pc += 2
@@ -214,14 +234,14 @@ func (i *InterpretedExecutionEngine) executeInFrame(def *class.DefFile, codeAttr
 				return fmt.Errorf("failed to execute 'invokestatic': %w", err)
 			}
 
-		case ireturn:
+		case bcode.Ireturn:
 			// 当前栈出栈, 值压如上一个栈
 			op, _ := frame.opStack.Pop()
 			lastFrame.opStack.Push(op)
 
 			exitLoop = true
 
-		case emptyreturn:
+		case bcode.Return:
 			// 返回
 			exitLoop = true
 
@@ -248,7 +268,9 @@ func (i *InterpretedExecutionEngine) findCodeAttr(method *class.MethodInfo) (*cl
 		}
 	}
 
-	return nil, errors.New("no node attr in method")
+	// return nil, errors.New("no node attr in method")
+	// native方法没有code属性
+	return nil, nil
 }
 
 func (i *InterpretedExecutionEngine) findMethod(def *class.DefFile, methodName string) (*class.MethodInfo, error) {
@@ -265,7 +287,7 @@ func (i *InterpretedExecutionEngine) findMethod(def *class.DefFile, methodName s
 func NewInterpretedExecutionEngine(vm *MiniJvm) *InterpretedExecutionEngine {
 	return &InterpretedExecutionEngine{
 		miniJvm:     vm,
-		methodStack: NewMethodStack(1024),
+		// methodStack: NewMethodStack(1024),
 	}
 }
 

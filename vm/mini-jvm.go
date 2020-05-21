@@ -3,7 +3,6 @@ package vm
 import (
 	"fmt"
 	"github.com/wanghongfei/mini-jvm/vm/class"
-	"log"
 	"strings"
 )
 
@@ -55,7 +54,7 @@ func (m *MiniJvm) executeMain() error {
 	}
 
 	// 执行
-	log.Printf("main class info: %+v\n", mainClassDef)
+	// log.Printf("main class info: %+v\n", mainClassDef)
 	return m.ExecutionEngine.Execute(mainClassDef, "main", nil)
 }
 
