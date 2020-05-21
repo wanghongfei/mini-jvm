@@ -26,16 +26,12 @@ func (i *InterpretedExecutionEngine) Execute(def *class.DefFile, methodName stri
 		return fmt.Errorf("failed to find method: %w", err)
 	}
 
-	if "print" == methodName {
-		fmt.Errorf("")
-	}
-
 	// 解析访问标记
 	flagMap := accflag.ParseAccFlags(method.AccessFlags)
 	if _, ok := flagMap[accflag.Native]; ok {
 		// 特殊处理输出函数, 因为System.out太复杂了
 		if "print" == methodName {
-			data, _ := lastFrame.opStack.Pop()
+			data, _ := lastFrame.opStack.PopInt()
 			fmt.Println(data)
 			return nil
 		}
@@ -69,7 +65,7 @@ func (i *InterpretedExecutionEngine) Execute(def *class.DefFile, methodName stri
 			// 是int参数
 			if "I" == arg {
 				// 从上一个栈帧中出栈, 保存到新栈帧的localVarTable中
-				op, _ := lastFrame.opStack.Pop()
+				op, _ := lastFrame.opStack.PopInt()
 				frame.localVariablesTable[ix] = op
 
 			} else {
@@ -123,15 +119,15 @@ func (i *InterpretedExecutionEngine) executeInFrame(def *class.DefFile, codeAttr
 
 		case bcode.Istore1:
 			// 将栈顶int型数值存入第二个本地变量
-			top, _ := frame.opStack.Pop()
+			top, _ := frame.opStack.PopInt()
 			frame.localVariablesTable[1] = top
 		case bcode.Istore2:
 			// 将栈顶int型数值存入第3个本地变量
-			top, _ := frame.opStack.Pop()
+			top, _ := frame.opStack.PopInt()
 			frame.localVariablesTable[2] = top
 		case bcode.Istore3:
 			// 将栈顶int型数值存入第4个本地变量
-			top, _ := frame.opStack.Pop()
+			top, _ := frame.opStack.PopInt()
 			frame.localVariablesTable[3] = top
 
 		case bcode.Iload0:
@@ -150,15 +146,15 @@ func (i *InterpretedExecutionEngine) executeInFrame(def *class.DefFile, codeAttr
 
 		case bcode.Iadd:
 			// 取出栈顶2元素，相加，入栈
-			op1, _ := frame.opStack.Pop()
-			op2, _ := frame.opStack.Pop()
+			op1, _ := frame.opStack.PopInt()
+			op2, _ := frame.opStack.PopInt()
 			sum := op1 + op2
 			frame.opStack.Push(sum)
 
 		case bcode.Bipush:
 			// 将单字节的常量值(-128~127)推送至栈顶
 			num := codeAttr.Code[frame.pc + 1]
-			frame.opStack.Push(uint32(num))
+			frame.opStack.Push(int(num))
 			frame.pc++
 
 		case bcode.Sipush:
@@ -172,15 +168,14 @@ func (i *InterpretedExecutionEngine) executeInFrame(def *class.DefFile, codeAttr
 				return fmt.Errorf("failed to read offset for sipush: %w", err)
 			}
 
-			// todo 限制: 不支持负数
-			frame.opStack.Push(uint32(op))
+			frame.opStack.Push(int(op))
 
 		case bcode.Ificmpgt:
 			// 比较栈顶两int型数值大小, 当结果大于0时跳转
 
 			// 待比较的数
-			x, _ := frame.opStack.Pop()
-			y, _ := frame.opStack.Pop()
+			x, _ := frame.opStack.PopInt()
+			y, _ := frame.opStack.PopInt()
 
 			// 跳转的偏移量
 			twoByteNum := codeAttr.Code[frame.pc + 1 : frame.pc + 1 + 2]
@@ -190,7 +185,7 @@ func (i *InterpretedExecutionEngine) executeInFrame(def *class.DefFile, codeAttr
 				return fmt.Errorf("failed to read offset for if_icmpgt: %w", err)
 			}
 
-			if int(y) - int(x) > 0 {
+			if y - x > 0 {
 				frame.pc = frame.pc + int(offset) - 1
 
 			} else {
@@ -204,7 +199,7 @@ func (i *InterpretedExecutionEngine) executeInFrame(def *class.DefFile, codeAttr
 			op2 := codeAttr.Code[frame.pc + 2]
 			frame.pc += 2
 
-			frame.localVariablesTable[op1] = frame.localVariablesTable[op1] + uint32(op2)
+			frame.localVariablesTable[op1] = frame.localVariablesTable[op1] + int(op2)
 
 		//case bcode.New:
 		//	// 创建一个对象, 并将其引用值压入栈顶
@@ -263,7 +258,7 @@ func (i *InterpretedExecutionEngine) executeInFrame(def *class.DefFile, codeAttr
 
 		case bcode.Ireturn:
 			// 当前栈出栈, 值压如上一个栈
-			op, _ := frame.opStack.Pop()
+			op, _ := frame.opStack.PopInt()
 			lastFrame.opStack.Push(op)
 
 			exitLoop = true
