@@ -30,6 +30,12 @@ func NewMethodArea(classpaths []string) (*MethodArea, error) {
 // 从classpath中加载一个类
 // fullname: 全限定性名
 func (m *MethodArea) LoadClass(fullyQualifiedName string) (*class.DefFile, error) {
+	// 先从已加载的类中寻找
+	targetClassDef, ok := m.ClassMap[fullyQualifiedName]
+	if ok {
+		return targetClassDef, nil
+	}
+
 	filepath, err := m.findClassFile(fullyQualifiedName)
 	if nil != err {
 		return nil, err

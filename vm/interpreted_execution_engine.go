@@ -143,6 +143,11 @@ func (i *InterpretedExecutionEngine) executeInFrame(def *class.DefFile, codeAttr
 		case bcode.Iload2:
 			frame.opStack.Push(frame.localVariablesTable[2])
 
+		case bcode.Dup:
+			// 复制栈顶数值并将复制值压入栈顶
+			top, _ := frame.opStack.GetTop()
+			frame.opStack.Push(top)
+
 		case bcode.Iadd:
 			// 取出栈顶2元素，相加，入栈
 			op1, _ := frame.opStack.Pop()
@@ -200,6 +205,28 @@ func (i *InterpretedExecutionEngine) executeInFrame(def *class.DefFile, codeAttr
 			frame.pc += 2
 
 			frame.localVariablesTable[op1] = frame.localVariablesTable[op1] + uint32(op2)
+
+		//case bcode.New:
+		//	// 创建一个对象, 并将其引用值压入栈顶
+		//	twoByteNum := codeAttr.Code[frame.pc + 1 : frame.pc + 1 + 2]
+		//	frame.pc += 2
+		//
+		//	var classCpIndex uint16
+		//	err := binary.Read(bytes.NewBuffer(twoByteNum), binary.BigEndian, &classCpIndex)
+		//	if nil != err {
+		//		return fmt.Errorf("failed to read class_cp_index for 'new': %w", err)
+		//	}
+		//
+		//	// 常量池中找出引用的class信息
+		//	classCp := def.ConstPool[classCpIndex].(*class.ClassInfoConstInfo)
+		//	// 目标class全名
+		//	targetClassFullName := def.ConstPool[classCp.FullClassNameIndex].(*class.Utf8InfoConst).String()
+		//	// 加载
+		//	targetDefClass, err := i.miniJvm.MethodArea.LoadClass(targetClassFullName)
+		//	if nil != err {
+		//		return fmt.Errorf("failed to load class for '%s': %w", targetClassFullName, err)
+		//	}
+		//
 
 		case bcode.Goto:
 			// 跳转

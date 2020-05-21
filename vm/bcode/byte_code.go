@@ -20,6 +20,8 @@ const (
 	Iload2 = 0x1c
 	Iload3 = 0x1d
 
+	Dup = 0x59
+
 	Iadd = 0x60
 
 	Iinc = 0x84
@@ -30,6 +32,8 @@ const (
 	Return = 0xb1
 
 	Invokestatic = 0xb8
+
+	New = 0xbb
 
 	Ireturn = 0xac
 )

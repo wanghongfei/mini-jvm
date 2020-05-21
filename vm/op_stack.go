@@ -41,3 +41,12 @@ func (s *OpStack) Pop() (uint32, bool) {
 	return data, true
 }
 
+func (s *OpStack) GetTop() (uint32, bool) {
+	if -1 == s.topIndex {
+		// 栈空
+		return 0, false
+	}
+
+	return s.elems[s.topIndex], true
+}
+
