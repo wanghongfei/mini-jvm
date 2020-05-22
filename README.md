@@ -184,21 +184,26 @@ public class NewSimpleObjectTest {
 
 ```java
 package com.fh;
-
-public class ClassExtendTest {
+public class MethodOverrideTest {
     public static void main(String[] args) {
-        Person person = new Person();
-        print(person.say());
+        int sum = add(100, 200);
+        print(sum);
+    }
 
-        person = new Student();
-        print(person.say());
+    public static int add(int x, int y) {
+        return x + y;
+    }
+
+    public static int add(int x, int y, int z) {
+        return x + y + z;
     }
 
     public static native void print(int num);
 }
+
 ```
 
 ```
-./mini-jvm ClassExtendTest ../testclass/
+./mini-jvm MethodOverrideTest ../testclass/
 ```
 
