@@ -1,3 +1,4 @@
+package com.fh;
 public class HelloMethod {
     public static void main(String[] args) {
         int sum = add(100, 200);

@@ -5,7 +5,7 @@ import (
 )
 
 func TestHelloNative(t *testing.T) {
-	miniJvm, err := NewMiniJvm("HelloNative", []string{"../testclass/"})
+	miniJvm, err := NewMiniJvm("com.fh.HelloNative", []string{"../testclass/"})
 	if nil != err {
 		t.Fatal(err)
 	}
@@ -17,7 +17,7 @@ func TestHelloNative(t *testing.T) {
 }
 
 func TestHelloClass(t *testing.T) {
-	miniJvm, err := NewMiniJvm("HelloClass", []string{"../testclass/"})
+	miniJvm, err := NewMiniJvm("com.fh.HelloClass", []string{"../testclass/"})
 	if nil != err {
 		t.Fatal(err)
 	}

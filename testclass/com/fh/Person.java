@@ -1,3 +1,4 @@
+package com.fh;
 public class Person {
     private int id;
     private int age;
