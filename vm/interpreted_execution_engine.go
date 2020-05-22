@@ -18,12 +18,12 @@ type InterpretedExecutionEngine struct {
 }
 
 func (i *InterpretedExecutionEngine) Execute(def *class.DefFile, methodName string) error {
-	return i.execute(def, methodName, nil)
+	return i.execute(def, methodName, "([Ljava/lang/String;)V", nil)
 }
 
-func (i *InterpretedExecutionEngine) execute(def *class.DefFile, methodName string, lastFrame *MethodStackFrame) error {
+func (i *InterpretedExecutionEngine) execute(def *class.DefFile, methodName string, methodDescriptor string, lastFrame *MethodStackFrame) error {
 	// 查找方法
-	method, err := i.findMethod(def, methodName)
+	method, err := i.findMethod(def, methodName, methodDescriptor)
 	if nil != err {
 		return fmt.Errorf("failed to find method: %w", err)
 	}
@@ -369,6 +369,8 @@ func (i *InterpretedExecutionEngine) invokeStatic(def *class.DefFile, frame *Met
 	// 取出方法名
 	nameAndType := def.ConstPool[methodRef.NameAndTypeIndex].(*class.NameAndTypeConst)
 	methodName := def.ConstPool[nameAndType.NameIndex].(*class.Utf8InfoConst).String()
+	// 描述符
+	descriptor := def.ConstPool[nameAndType.DescIndex].(*class.Utf8InfoConst).String()
 	// 取出方法所在的class
 	classRef := def.ConstPool[methodRef.ClassIndex].(*class.ClassInfoConstInfo)
 	// 取出目标class全名
@@ -380,7 +382,7 @@ func (i *InterpretedExecutionEngine) invokeStatic(def *class.DefFile, frame *Met
 	}
 
 	// 调用
-	return i.execute(targetDef, methodName, frame)
+	return i.execute(targetDef, methodName, descriptor, frame)
 }
 
 func (i *InterpretedExecutionEngine) invokeSpecial(def *class.DefFile, frame *MethodStackFrame, codeAttr *class.CodeAttr) error {
@@ -399,6 +401,8 @@ func (i *InterpretedExecutionEngine) invokeSpecial(def *class.DefFile, frame *Me
 	// 取出方法名
 	nameAndType := def.ConstPool[methodRef.NameAndTypeIndex].(*class.NameAndTypeConst)
 	methodName := def.ConstPool[nameAndType.NameIndex].(*class.Utf8InfoConst).String()
+	// 描述符
+	descriptor := def.ConstPool[nameAndType.DescIndex].(*class.Utf8InfoConst).String()
 	// 取出方法所在的class
 	classRef := def.ConstPool[methodRef.ClassIndex].(*class.ClassInfoConstInfo)
 	// 取出目标class全名
@@ -417,7 +421,7 @@ func (i *InterpretedExecutionEngine) invokeSpecial(def *class.DefFile, frame *Me
 	}
 
 	// 调用
-	return i.execute(targetDef, methodName, frame)
+	return i.execute(targetDef, methodName, descriptor, frame)
 }
 
 func (i *InterpretedExecutionEngine) invokeVirtual(def *class.DefFile, frame *MethodStackFrame, codeAttr *class.CodeAttr) error {
@@ -435,6 +439,8 @@ func (i *InterpretedExecutionEngine) invokeVirtual(def *class.DefFile, frame *Me
 	// 取出方法名
 	nameAndType := def.ConstPool[methodRef.NameAndTypeIndex].(*class.NameAndTypeConst)
 	methodName := def.ConstPool[nameAndType.NameIndex].(*class.Utf8InfoConst).String()
+	// 描述符
+	descriptor := def.ConstPool[nameAndType.DescIndex].(*class.Utf8InfoConst).String()
 	// 取出方法所在的class
 	classRef := def.ConstPool[methodRef.ClassIndex].(*class.ClassInfoConstInfo)
 	// 取出目标class全名
@@ -450,7 +456,7 @@ func (i *InterpretedExecutionEngine) invokeVirtual(def *class.DefFile, frame *Me
 
 
 	// 调用
-	return i.execute(targetDef, methodName, frame)
+	return i.execute(targetDef, methodName, descriptor, frame)
 }
 
 func (i *InterpretedExecutionEngine) findCodeAttr(method *class.MethodInfo) (*class.CodeAttr, error) {
@@ -466,10 +472,12 @@ func (i *InterpretedExecutionEngine) findCodeAttr(method *class.MethodInfo) (*cl
 	return nil, nil
 }
 
-func (i *InterpretedExecutionEngine) findMethod(def *class.DefFile, methodName string) (*class.MethodInfo, error) {
+func (i *InterpretedExecutionEngine) findMethod(def *class.DefFile, methodName string, methodDescriptor string) (*class.MethodInfo, error) {
 	for _, method := range def.Methods {
 		name := def.ConstPool[method.NameIndex].(*class.Utf8InfoConst).String()
-		if name == methodName {
+		descriptor := def.ConstPool[method.DescriptorIndex].(*class.Utf8InfoConst).String()
+		// 匹配简单明和描述符
+		if name == methodName && descriptor == methodDescriptor {
 			return method, nil
 		}
 	}
