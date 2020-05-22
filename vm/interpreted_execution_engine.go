@@ -17,13 +17,11 @@ type InterpretedExecutionEngine struct {
 	// methodStack *MethodStack
 }
 
+func (i *InterpretedExecutionEngine) Execute(def *class.DefFile, methodName string) error {
+	return i.execute(def, methodName, nil)
+}
 
-func (i *InterpretedExecutionEngine) Execute(def *class.DefFile, methodName string, lastFrame *MethodStackFrame) error {
-	//if "<init>" == methodName {
-	//	// todo 暂不实现构造器调用
-	//	return nil
-	//}
-
+func (i *InterpretedExecutionEngine) execute(def *class.DefFile, methodName string, lastFrame *MethodStackFrame) error {
 	// 查找方法
 	method, err := i.findMethod(def, methodName)
 	if nil != err {
@@ -61,7 +59,8 @@ func (i *InterpretedExecutionEngine) Execute(def *class.DefFile, methodName stri
 		// 传参
 		// 判断是不是static方法
 		var localVarStartIndexOffset int
-		if _, ok := flagMap[accflag.Static]; ok {
+		_, isStatic := flagMap[accflag.Static]
+		if isStatic {
 			// 如果是static方法, 则参数列表从本地变量表的0开始塞入
 			localVarStartIndexOffset = 0
 
@@ -88,7 +87,7 @@ func (i *InterpretedExecutionEngine) Execute(def *class.DefFile, methodName stri
 			}
 		}
 
-		if _, ok := flagMap[accflag.Static]; !ok {
+		if !isStatic {
 			// 将this引用塞入0的位置
 			obj, _ := lastFrame.opStack.PopObject()
 			frame.localVariablesTable[0] = obj
@@ -381,7 +380,7 @@ func (i *InterpretedExecutionEngine) invokeStatic(def *class.DefFile, frame *Met
 	}
 
 	// 调用
-	return i.Execute(targetDef, methodName, frame)
+	return i.execute(targetDef, methodName, frame)
 }
 
 func (i *InterpretedExecutionEngine) invokeSpecial(def *class.DefFile, frame *MethodStackFrame, codeAttr *class.CodeAttr) error {
@@ -418,7 +417,7 @@ func (i *InterpretedExecutionEngine) invokeSpecial(def *class.DefFile, frame *Me
 	}
 
 	// 调用
-	return i.Execute(targetDef, methodName, frame)
+	return i.execute(targetDef, methodName, frame)
 }
 
 func (i *InterpretedExecutionEngine) invokeVirtual(def *class.DefFile, frame *MethodStackFrame, codeAttr *class.CodeAttr) error {
@@ -451,7 +450,7 @@ func (i *InterpretedExecutionEngine) invokeVirtual(def *class.DefFile, frame *Me
 
 
 	// 调用
-	return i.Execute(targetDef, methodName, frame)
+	return i.execute(targetDef, methodName, frame)
 }
 
 func (i *InterpretedExecutionEngine) findCodeAttr(method *class.MethodInfo) (*class.CodeAttr, error) {
