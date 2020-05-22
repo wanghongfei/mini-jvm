@@ -20,6 +20,12 @@ const (
 	Iload2 = 0x1c
 	Iload3 = 0x1d
 
+	Aload0 = 0x2a
+	Aload1 = 0x2b
+	Aload2 = 0x2c
+
+	Astore2 = 0x4d
+
 	Dup = 0x59
 
 	Iadd = 0x60
@@ -31,6 +37,11 @@ const (
 
 	Return = 0xb1
 
+	GetField = 0xb4
+	Putfield = 0xb5
+
+	Invokevirtual = 0xb6
+	Invokespecial = 0xb7
 	Invokestatic = 0xb8
 
 	New = 0xbb

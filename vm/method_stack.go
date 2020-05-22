@@ -1,5 +1,7 @@
 package vm
 
+import "github.com/wanghongfei/mini-jvm/vm/class"
+
 // 方法栈
 type MethodStack struct {
 	frames []*MethodStackFrame
@@ -44,7 +46,7 @@ func (s *MethodStack) Pop() (*MethodStackFrame, bool) {
 // 方法栈的栈帧
 type MethodStackFrame struct {
 	// 本地变量表
-	localVariablesTable []int
+	localVariablesTable []interface{}
 
 	// 操作数栈
 	opStack *OpStack
@@ -55,8 +57,16 @@ type MethodStackFrame struct {
 
 func newMethodStackFrame(opStackDepth int, localVarTableAmount int) *MethodStackFrame {
 	return &MethodStackFrame{
-		localVariablesTable: make([]int, localVarTableAmount),
+		localVariablesTable: make([]interface{}, localVarTableAmount),
 		opStack:             NewOpStack(opStackDepth),
 		pc:                  0,
 	}
+}
+
+func (f *MethodStackFrame) GetLocalTableIntAt(index int) int {
+	return f.localVariablesTable[index].(int)
+}
+
+func (f *MethodStackFrame) GetLocalTableObjectAt(index int) *class.Object {
+	return f.localVariablesTable[index].(*class.Object)
 }

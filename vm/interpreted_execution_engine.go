@@ -8,7 +8,6 @@ import (
 	"github.com/wanghongfei/mini-jvm/vm/accflag"
 	"github.com/wanghongfei/mini-jvm/vm/bcode"
 	"github.com/wanghongfei/mini-jvm/vm/class"
-	"strings"
 )
 
 // 解释执行引擎
@@ -20,6 +19,11 @@ type InterpretedExecutionEngine struct {
 
 
 func (i *InterpretedExecutionEngine) Execute(def *class.DefFile, methodName string, lastFrame *MethodStackFrame) error {
+	//if "<init>" == methodName {
+	//	// todo 暂不实现构造器调用
+	//	return nil
+	//}
+
 	// 查找方法
 	method, err := i.findMethod(def, methodName)
 	if nil != err {
@@ -55,22 +59,39 @@ func (i *InterpretedExecutionEngine) Execute(def *class.DefFile, methodName stri
 
 	} else {
 		// 传参
-		
+		// 判断是不是static方法
+		var localVarStartIndexOffset int
+		if _, ok := flagMap[accflag.Static]; ok {
+			// 如果是static方法, 则参数列表从本地变量表的0开始塞入
+			localVarStartIndexOffset = 0
+
+		} else {
+			// 如果不是static方法, 则参数列表从本地变量表的1开始塞入
+			localVarStartIndexOffset = 1
+
+		}
+
 		// 取出方法描述符
 		descriptor := def.ConstPool[method.DescriptorIndex].(*class.Utf8InfoConst).String()
 		// 解析描述符
-		argList, _ := i.parseDescriptor(descriptor)
+		argList, _ := class.ParseMethodDescriptor(descriptor)
 		// 将参数保存到新栈帧的本地变量表中
 		for ix, arg := range argList {
 			// 是int参数
 			if "I" == arg {
 				// 从上一个栈帧中出栈, 保存到新栈帧的localVarTable中
 				op, _ := lastFrame.opStack.PopInt()
-				frame.localVariablesTable[ix] = op
+				frame.localVariablesTable[ix + localVarStartIndexOffset] = op
 
 			} else {
 				return fmt.Errorf("unsupported argument descriptor '%s' in '%s'", arg, descriptor)
 			}
+		}
+
+		if _, ok := flagMap[accflag.Static]; !ok {
+			// 将this引用塞入0的位置
+			obj, _ := lastFrame.opStack.PopObject()
+			frame.localVariablesTable[0] = obj
 		}
 	}
 
@@ -78,25 +99,6 @@ func (i *InterpretedExecutionEngine) Execute(def *class.DefFile, methodName stri
 
 	// 执行字节码
 	return i.executeInFrame(def, codeAttr, frame, lastFrame)
-}
-
-// 解析方法描述符;
-// ret1: 参数列表
-// ret2: 返回类型
-func (i *InterpretedExecutionEngine) parseDescriptor(descriptor string) ([]string, string) {
-	// 提取参数列表
-	argDescEndIndex := strings.Index(descriptor, ")")
-	argDesc := descriptor[1:argDescEndIndex]
-
-	// 解析参数列表
-	argList := make([]string, 0, 5)
-	for _, ch := range argDesc {
-		argList = append(argList, string(ch))
-	}
-
-	retDesc := descriptor[argDescEndIndex + 1:]
-
-	return argList, retDesc
 }
 
 func (i *InterpretedExecutionEngine) executeInFrame(def *class.DefFile, codeAttr *class.CodeAttr, frame *MethodStackFrame, lastFrame *MethodStackFrame) error {
@@ -134,10 +136,25 @@ func (i *InterpretedExecutionEngine) executeInFrame(def *class.DefFile, codeAttr
 			// 将第1个slot中的值压栈
 			frame.opStack.Push(frame.localVariablesTable[0])
 		case bcode.Iload1:
-			// 将第2个slot中的值压栈
 			frame.opStack.Push(frame.localVariablesTable[1])
 		case bcode.Iload2:
 			frame.opStack.Push(frame.localVariablesTable[2])
+		case bcode.Iload3:
+			frame.opStack.Push(frame.localVariablesTable[3])
+
+		case bcode.Aload0:
+			// 将第一个引用类型本地变量推送至栈顶
+			ref := frame.GetLocalTableObjectAt(0)
+			frame.opStack.Push(ref)
+		case bcode.Aload2:
+			// 将第3个引用类型本地变量推送至栈顶
+			ref := frame.GetLocalTableObjectAt(2)
+			frame.opStack.Push(ref)
+
+		case bcode.Astore2:
+			// 将栈顶引用型数值存入第三个本地变量
+			ref, _ := frame.opStack.Pop()
+			frame.localVariablesTable[2] = ref
 
 		case bcode.Dup:
 			// 复制栈顶数值并将复制值压入栈顶
@@ -199,29 +216,37 @@ func (i *InterpretedExecutionEngine) executeInFrame(def *class.DefFile, codeAttr
 			op2 := codeAttr.Code[frame.pc + 2]
 			frame.pc += 2
 
-			frame.localVariablesTable[op1] = frame.localVariablesTable[op1] + int(op2)
+			// frame.localVariablesTable[op1] = frame.localVariablesTable[op1] + int(op2)
+			frame.localVariablesTable[op1] = frame.GetLocalTableIntAt(int(op1)) + int(op2)
 
-		//case bcode.New:
-		//	// 创建一个对象, 并将其引用值压入栈顶
-		//	twoByteNum := codeAttr.Code[frame.pc + 1 : frame.pc + 1 + 2]
-		//	frame.pc += 2
-		//
-		//	var classCpIndex uint16
-		//	err := binary.Read(bytes.NewBuffer(twoByteNum), binary.BigEndian, &classCpIndex)
-		//	if nil != err {
-		//		return fmt.Errorf("failed to read class_cp_index for 'new': %w", err)
-		//	}
-		//
-		//	// 常量池中找出引用的class信息
-		//	classCp := def.ConstPool[classCpIndex].(*class.ClassInfoConstInfo)
-		//	// 目标class全名
-		//	targetClassFullName := def.ConstPool[classCp.FullClassNameIndex].(*class.Utf8InfoConst).String()
-		//	// 加载
-		//	targetDefClass, err := i.miniJvm.MethodArea.LoadClass(targetClassFullName)
-		//	if nil != err {
-		//		return fmt.Errorf("failed to load class for '%s': %w", targetClassFullName, err)
-		//	}
-		//
+		case bcode.New:
+			// 创建一个对象, 并将其引用值压入栈顶
+			twoByteNum := codeAttr.Code[frame.pc + 1 : frame.pc + 1 + 2]
+			frame.pc += 2
+
+			var classCpIndex uint16
+			err := binary.Read(bytes.NewBuffer(twoByteNum), binary.BigEndian, &classCpIndex)
+			if nil != err {
+				return fmt.Errorf("failed to read class_cp_index for 'new': %w", err)
+			}
+
+			// 常量池中找出引用的class信息
+			classCp := def.ConstPool[classCpIndex].(*class.ClassInfoConstInfo)
+			// 目标class全名
+			targetClassFullName := def.ConstPool[classCp.FullClassNameIndex].(*class.Utf8InfoConst).String()
+			// 加载
+			targetDefClass, err := i.miniJvm.MethodArea.LoadClass(targetClassFullName)
+			if nil != err {
+				return fmt.Errorf("failed to load class for '%s': %w", targetClassFullName, err)
+			}
+			// new
+			obj, err := class.NewObject(targetDefClass)
+			if nil != err {
+				return fmt.Errorf("failed to new object for '%s': %w", targetClassFullName, err)
+			}
+			// 压栈
+			frame.opStack.Push(obj)
+
 
 		case bcode.Goto:
 			// 跳转
@@ -236,25 +261,73 @@ func (i *InterpretedExecutionEngine) executeInFrame(def *class.DefFile, codeAttr
 
 		case bcode.Invokestatic:
 			// 调用静态方法
-			twoByteNum := codeAttr.Code[frame.pc + 1 : frame.pc + 1 + 2]
-			frame.pc += 2
-
-			var methodRefCpIndex uint16
-			err := binary.Read(bytes.NewBuffer(twoByteNum), binary.BigEndian, &methodRefCpIndex)
-			if nil != err {
-				return fmt.Errorf("failed to read method_ref_cp_index for 'invokestatic': %w", err)
-			}
-
-			// 取出引用的方法
-			methodRef := def.ConstPool[methodRefCpIndex].(*class.MethodRefConstInfo)
-			nameAndType := def.ConstPool[methodRef.NameAndTypeIndex].(*class.NameAndTypeConst)
-			methodName := def.ConstPool[nameAndType.NameIndex].(*class.Utf8InfoConst).String()
-
-			// 调用
-			err = i.Execute(def, methodName, frame)
+			err := i.invokeStatic(def, frame, codeAttr)
 			if nil != err {
 				return fmt.Errorf("failed to execute 'invokestatic': %w", err)
 			}
+
+		case bcode.Invokespecial:
+			// 调用超类构建方法, 实例初始化方法, 私有方法
+			err := i.invokeSpecial(def, frame, codeAttr)
+			if nil != err {
+				return fmt.Errorf("failed to execute 'invokespecial': %w", err)
+			}
+
+		case bcode.Invokevirtual:
+			// public method
+			err := i.invokeVirtual(def, frame, codeAttr)
+			if nil != err {
+				return fmt.Errorf("failed to execute 'invokevirtual': %w", err)
+			}
+
+		case bcode.Putfield:
+			// 对象字段赋值
+			twoByteNum := codeAttr.Code[frame.pc + 1 : frame.pc + 1 + 2]
+			frame.pc += 2
+
+			var fieldRefCpIndex uint16
+			err := binary.Read(bytes.NewBuffer(twoByteNum), binary.BigEndian, &fieldRefCpIndex)
+			if nil != err {
+				return fmt.Errorf("failed to read field_ref_cp_index: %w", err)
+			}
+
+			// 取出引用的字段
+			fieldRef := def.ConstPool[fieldRefCpIndex].(*class.FieldRefConstInfo)
+			// 取出字段名
+			nameAndType := def.ConstPool[fieldRef.NameAndTypeIndex].(*class.NameAndTypeConst)
+			fieldName := def.ConstPool[nameAndType.NameIndex].(*class.Utf8InfoConst).String()
+
+			// 赋值
+			val, _ := frame.opStack.PopInt()
+			obj, _ := frame.opStack.PopObject()
+			obj.ObjectFields[fieldName].FieldValue = val
+			// thisObj.ObjectFields[fieldName].FieldValue, _ = frame.opStack.PopInt()
+
+		case bcode.GetField:
+			// 获取指定对象的实例域, 并将其压入栈顶
+			twoByteNum := codeAttr.Code[frame.pc + 1 : frame.pc + 1 + 2]
+			frame.pc += 2
+
+			var fieldRefCpIndex uint16
+			err := binary.Read(bytes.NewBuffer(twoByteNum), binary.BigEndian, &fieldRefCpIndex)
+			if nil != err {
+				return fmt.Errorf("failed to read field_ref_cp_index: %w", err)
+			}
+
+			// 取出引用的字段
+			fieldRef := def.ConstPool[fieldRefCpIndex].(*class.FieldRefConstInfo)
+			// 取出字段名
+			nameAndType := def.ConstPool[fieldRef.NameAndTypeIndex].(*class.NameAndTypeConst)
+			fieldName := def.ConstPool[nameAndType.NameIndex].(*class.Utf8InfoConst).String()
+
+			// 取出引用的对象
+			targetObj, _ := frame.opStack.PopObject()
+
+			// 读取
+			val := targetObj.ObjectFields[fieldName].FieldValue
+			// 压栈
+			frame.opStack.Push(val)
+
 
 		case bcode.Ireturn:
 			// 当前栈出栈, 值压如上一个栈
@@ -280,6 +353,105 @@ func (i *InterpretedExecutionEngine) executeInFrame(def *class.DefFile, codeAttr
 	}
 
 	return nil
+}
+
+func (i *InterpretedExecutionEngine) invokeStatic(def *class.DefFile, frame *MethodStackFrame, codeAttr *class.CodeAttr) error {
+	twoByteNum := codeAttr.Code[frame.pc + 1 : frame.pc + 1 + 2]
+	frame.pc += 2
+
+	var methodRefCpIndex uint16
+	err := binary.Read(bytes.NewBuffer(twoByteNum), binary.BigEndian, &methodRefCpIndex)
+	if nil != err {
+		return fmt.Errorf("failed to read method_ref_cp_index: %w", err)
+	}
+
+	// 取出引用的方法
+	methodRef := def.ConstPool[methodRefCpIndex].(*class.MethodRefConstInfo)
+	// 取出方法名
+	nameAndType := def.ConstPool[methodRef.NameAndTypeIndex].(*class.NameAndTypeConst)
+	methodName := def.ConstPool[nameAndType.NameIndex].(*class.Utf8InfoConst).String()
+	// 取出方法所在的class
+	classRef := def.ConstPool[methodRef.ClassIndex].(*class.ClassInfoConstInfo)
+	// 取出目标class全名
+	targetClassFullName := def.ConstPool[classRef.FullClassNameIndex].(*class.Utf8InfoConst).String()
+	// 加载
+	targetDef, err := i.miniJvm.findDefClass(targetClassFullName)
+	if nil != err {
+		return fmt.Errorf("failed to load class for '%s': %w", targetClassFullName, err)
+	}
+
+	// 调用
+	return i.Execute(targetDef, methodName, frame)
+}
+
+func (i *InterpretedExecutionEngine) invokeSpecial(def *class.DefFile, frame *MethodStackFrame, codeAttr *class.CodeAttr) error {
+	twoByteNum := codeAttr.Code[frame.pc + 1 : frame.pc + 1 + 2]
+	frame.pc += 2
+
+	var methodRefCpIndex uint16
+	err := binary.Read(bytes.NewBuffer(twoByteNum), binary.BigEndian, &methodRefCpIndex)
+	if nil != err {
+		return fmt.Errorf("failed to read method_ref_cp_index: %w", err)
+	}
+
+
+	// 取出引用的方法
+	methodRef := def.ConstPool[methodRefCpIndex].(*class.MethodRefConstInfo)
+	// 取出方法名
+	nameAndType := def.ConstPool[methodRef.NameAndTypeIndex].(*class.NameAndTypeConst)
+	methodName := def.ConstPool[nameAndType.NameIndex].(*class.Utf8InfoConst).String()
+	// 取出方法所在的class
+	classRef := def.ConstPool[methodRef.ClassIndex].(*class.ClassInfoConstInfo)
+	// 取出目标class全名
+	targetClassFullName := def.ConstPool[classRef.FullClassNameIndex].(*class.Utf8InfoConst).String()
+	// 加载
+	targetDef, err := i.miniJvm.findDefClass(targetClassFullName)
+	if nil != err {
+		return fmt.Errorf("failed to load class for '%s': %w", targetClassFullName, err)
+	}
+
+	if "<init>" == methodName {
+		// 忽略构造器
+		// 消耗一个引用
+		frame.opStack.PopObject()
+		return nil
+	}
+
+	// 调用
+	return i.Execute(targetDef, methodName, frame)
+}
+
+func (i *InterpretedExecutionEngine) invokeVirtual(def *class.DefFile, frame *MethodStackFrame, codeAttr *class.CodeAttr) error {
+	twoByteNum := codeAttr.Code[frame.pc + 1 : frame.pc + 1 + 2]
+	frame.pc += 2
+
+	var methodRefCpIndex uint16
+	err := binary.Read(bytes.NewBuffer(twoByteNum), binary.BigEndian, &methodRefCpIndex)
+	if nil != err {
+		return fmt.Errorf("failed to read method_ref_cp_index: %w", err)
+	}
+
+	// 取出引用的方法
+	methodRef := def.ConstPool[methodRefCpIndex].(*class.MethodRefConstInfo)
+	// 取出方法名
+	nameAndType := def.ConstPool[methodRef.NameAndTypeIndex].(*class.NameAndTypeConst)
+	methodName := def.ConstPool[nameAndType.NameIndex].(*class.Utf8InfoConst).String()
+	// 取出方法所在的class
+	classRef := def.ConstPool[methodRef.ClassIndex].(*class.ClassInfoConstInfo)
+	// 取出目标class全名
+	targetClassFullName := def.ConstPool[classRef.FullClassNameIndex].(*class.Utf8InfoConst).String()
+	// 加载
+	targetDef, err := i.miniJvm.findDefClass(targetClassFullName)
+	if nil != err {
+		return fmt.Errorf("failed to load class for '%s': %w", targetClassFullName, err)
+	}
+
+	// 取出栈顶对象引用
+	// targetObj, _ := frame.opStack.PopObject()
+
+
+	// 调用
+	return i.Execute(targetDef, methodName, frame)
 }
 
 func (i *InterpretedExecutionEngine) findCodeAttr(method *class.MethodInfo) (*class.CodeAttr, error) {

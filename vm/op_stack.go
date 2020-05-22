@@ -1,5 +1,7 @@
 package vm
 
+import "github.com/wanghongfei/mini-jvm/vm/class"
+
 // 操作数栈
 type OpStack struct {
 	elems []interface{}
@@ -60,6 +62,16 @@ func (s *OpStack) PopInt() (int, bool) {
 	}
 
 	v, ok := elem.(int)
+	return v, ok
+}
+
+func (s *OpStack) PopObject() (*class.Object, bool) {
+	elem, ok := s.Pop()
+	if !ok {
+		return nil, ok
+	}
+
+	v, ok := elem.(*class.Object)
 	return v, ok
 }
 
