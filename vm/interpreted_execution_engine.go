@@ -218,6 +218,27 @@ func (i *InterpretedExecutionEngine) executeInFrame(def *class.DefFile, codeAttr
 				frame.pc += 2
 			}
 
+		case bcode.Ificmple:
+			// 比较栈顶两int型数值大小, 当结果<=0时跳转
+
+			// 待比较的数
+			x, _ := frame.opStack.PopInt()
+			y, _ := frame.opStack.PopInt()
+
+			// 跳转的偏移量
+			twoByteNum := codeAttr.Code[frame.pc + 1 : frame.pc + 1 + 2]
+			var offset int16
+			err := binary.Read(bytes.NewBuffer(twoByteNum), binary.BigEndian, &offset)
+			if nil != err {
+				return fmt.Errorf("failed to read offset for if_icmpgt: %w", err)
+			}
+
+			if y - x <= 0 {
+				frame.pc = frame.pc + int(offset) - 1
+
+			} else {
+				frame.pc += 2
+			}
 
 		case bcode.Iinc:
 			// 将第op1个slot的变量增加op2
