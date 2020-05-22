@@ -85,3 +85,31 @@ func (s *OpStack) GetTopInt() (interface{}, bool) {
 	return v, ok
 }
 
+func (s *OpStack) GetTopObject() (*class.Object, bool) {
+	elem, ok := s.GetTop()
+	if !ok {
+		return nil, ok
+	}
+
+	v, ok := elem.(*class.Object)
+	return v, ok
+}
+
+func (s *OpStack) GetUntilObject() (*class.Object, bool) {
+
+	index := s.topIndex
+	for {
+		if -1 == index {
+			break
+		}
+
+		v, ok := s.elems[index].(*class.Object)
+		if ok {
+			return v, true
+		}
+
+		index--
+	}
+
+	return nil, false
+}

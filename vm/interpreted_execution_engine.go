@@ -145,13 +145,23 @@ func (i *InterpretedExecutionEngine) executeInFrame(def *class.DefFile, codeAttr
 			// 将第一个引用类型本地变量推送至栈顶
 			ref := frame.GetLocalTableObjectAt(0)
 			frame.opStack.Push(ref)
+		case bcode.Aload1:
+			ref := frame.GetLocalTableObjectAt(1)
+			frame.opStack.Push(ref)
 		case bcode.Aload2:
 			// 将第3个引用类型本地变量推送至栈顶
 			ref := frame.GetLocalTableObjectAt(2)
 			frame.opStack.Push(ref)
 
+		case bcode.Astore0:
+			// 将栈顶引用型数值存入本地变量
+			ref, _ := frame.opStack.Pop()
+			frame.localVariablesTable[0] = ref
+		case bcode.Astore1:
+			// 将栈顶引用型数值存入本地变量
+			ref, _ := frame.opStack.Pop()
+			frame.localVariablesTable[1] = ref
 		case bcode.Astore2:
-			// 将栈顶引用型数值存入第三个本地变量
 			ref, _ := frame.opStack.Pop()
 			frame.localVariablesTable[2] = ref
 
@@ -434,6 +444,11 @@ func (i *InterpretedExecutionEngine) invokeVirtual(def *class.DefFile, frame *Me
 		return fmt.Errorf("failed to read method_ref_cp_index: %w", err)
 	}
 
+	// 找到操作数栈中的第一个引用
+	// 次引用即为实际类型
+	targetObj, _ := frame.opStack.GetUntilObject()
+	targetDef := targetObj.DefFile
+
 	// 取出引用的方法
 	methodRef := def.ConstPool[methodRefCpIndex].(*class.MethodRefConstInfo)
 	// 取出方法名
@@ -441,15 +456,17 @@ func (i *InterpretedExecutionEngine) invokeVirtual(def *class.DefFile, frame *Me
 	methodName := def.ConstPool[nameAndType.NameIndex].(*class.Utf8InfoConst).String()
 	// 描述符
 	descriptor := def.ConstPool[nameAndType.DescIndex].(*class.Utf8InfoConst).String()
-	// 取出方法所在的class
-	classRef := def.ConstPool[methodRef.ClassIndex].(*class.ClassInfoConstInfo)
-	// 取出目标class全名
-	targetClassFullName := def.ConstPool[classRef.FullClassNameIndex].(*class.Utf8InfoConst).String()
-	// 加载
-	targetDef, err := i.miniJvm.findDefClass(targetClassFullName)
-	if nil != err {
-		return fmt.Errorf("failed to load class for '%s': %w", targetClassFullName, err)
-	}
+
+
+	//// 取出方法所在的class
+	//classRef := def.ConstPool[methodRef.ClassIndex].(*class.ClassInfoConstInfo)
+	//// 取出目标class全名
+	//targetClassFullName := def.ConstPool[classRef.FullClassNameIndex].(*class.Utf8InfoConst).String()
+	//// 加载
+	//targetDef, err := i.miniJvm.findDefClass(targetClassFullName)
+	//if nil != err {
+	//	return fmt.Errorf("failed to load class for '%s': %w", targetClassFullName, err)
+	//}
 
 	// 取出栈顶对象引用
 	// targetObj, _ := frame.opStack.PopObject()
@@ -472,15 +489,39 @@ func (i *InterpretedExecutionEngine) findCodeAttr(method *class.MethodInfo) (*cl
 	return nil, nil
 }
 
+// 查找方法定义;
+// def: 当前class定义
+// methodName: 目标方法简单名
+// methodDescriptor: 目标方法描述符
 func (i *InterpretedExecutionEngine) findMethod(def *class.DefFile, methodName string, methodDescriptor string) (*class.MethodInfo, error) {
-	for _, method := range def.Methods {
-		name := def.ConstPool[method.NameIndex].(*class.Utf8InfoConst).String()
-		descriptor := def.ConstPool[method.DescriptorIndex].(*class.Utf8InfoConst).String()
-		// 匹配简单明和描述符
-		if name == methodName && descriptor == methodDescriptor {
-			return method, nil
+	currentClassDef := def
+	for {
+		for _, method := range currentClassDef.Methods {
+			name := def.ConstPool[method.NameIndex].(*class.Utf8InfoConst).String()
+			descriptor := def.ConstPool[method.DescriptorIndex].(*class.Utf8InfoConst).String()
+			// 匹配简单名和描述符
+			if name == methodName && descriptor == methodDescriptor {
+				return method, nil
+			}
 		}
+
+		// 从父类中寻找
+		parentClassRef := def.ConstPool[def.SuperClass].(*class.ClassInfoConstInfo)
+		// 取出父类全名
+		targetClassFullName := def.ConstPool[parentClassRef.FullClassNameIndex].(*class.Utf8InfoConst).String()
+		if "java/lang/Object" == targetClassFullName {
+			break
+		}
+
+		// 加载父类
+		parentDef, err := i.miniJvm.findDefClass(targetClassFullName)
+		if nil != err {
+			return nil, fmt.Errorf("failed to load superclass '%s': %w", targetClassFullName, err)
+		}
+
+		currentClassDef = parentDef
 	}
+
 
 	return nil, fmt.Errorf("method '%s' not found", methodName)
 }

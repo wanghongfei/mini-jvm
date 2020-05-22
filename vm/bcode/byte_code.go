@@ -24,6 +24,8 @@ const (
 	Aload1 = 0x2b
 	Aload2 = 0x2c
 
+	Astore0 = 0x4b
+	Astore1 = 0x4c
 	Astore2 = 0x4d
 
 	Dup = 0x59

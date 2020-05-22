@@ -3,6 +3,10 @@ public class Person {
     private int id;
     private int age;
 
+    public int say() {
+        return 1;
+    }
+
     public void setId(int id) {
         this.id = id;
     }

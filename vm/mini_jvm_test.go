@@ -41,3 +41,16 @@ func TestHelloMethod(t *testing.T) {
 	}
 
 }
+
+func TestClassExtend(t *testing.T) {
+	miniJvm, err := NewMiniJvm("com.fh.ClassExtendTest", []string{"../testclass/"})
+	if nil != err {
+		t.Fatal(err)
+	}
+
+	err = miniJvm.Start()
+	if nil != err {
+		t.Fatal(err)
+	}
+
+}
