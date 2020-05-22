@@ -4,13 +4,19 @@
 
 Mini-JVM首先会从`classpath`中加载主类的class文件，然后找到main方法的字节码解释执行；执行过程中如果遇到新的类符号引用，则会通过全限定性名再从`classpath`中加载新的类文件，以此类推；
 
-当前仅支持整数加法、循环、控制台输出、简单对象创建(不会调用构造方法)、部分继承特性、形参全部为int类型的方法调用、方法重载；其他特性还未实现，如异常、JDK类库加载、线程等等；
+当前仅支持整数加法、循环、控制台输出、简单对象创建(不会调用构造方法)、部分继承特性、形参全部为int类型的方法调用、方法重载、方法重写；其他特性还未实现，如异常、JDK类库加载、线程等等；
 
-
-
-
+  
 
 ## 使用方法
+
+编译(打开mod支持)：
+
+```
+go build -o mini-jvm
+```
+
+运行：
 
 ```shell
 ./mini-jvm [主类全限定性名] [classpath(仅支持.class文件所在目录,不支持jar)]
@@ -84,7 +90,7 @@ const (
 
 以下Java代码均使用Java8进行编译；
 
-
+  
 
 计算从1加到100的值(`testclass/com/fh/ForLoopPrintTest.java`)：
 
@@ -112,9 +118,7 @@ public class ForLoopPrintTest {
 ./mini-jvm ForLoopPrintTest ../testclass/
 ```
 
-
-
-
+  
 
 递归调用方法(`testclass/com/fh/RecursionTest`)：
 
@@ -145,9 +149,7 @@ public class RecursionTest {
 ./mini-jvm RecursionTest ../testclass/
 ```
 
-
-
-
+  
 
 简单对象的创建/访问(`testclass/com/fh/NewSimpleObjectTest.java`)：
 
@@ -180,11 +182,9 @@ public class NewSimpleObjectTest {
 ./mini-jvm NewSimpleObjectTest ../testclass/
 ```
 
+   
 
-
-
-
-方法重写(`testclass/com/fh/MethodReloadTest.java`)：
+方法重载(`testclass/com/fh/MethodReloadTest.java`)：
 
 ```java
 package com.fh;
@@ -209,5 +209,29 @@ public class MethodReloadTest {
 
 ```
 ./mini-jvm MethodReloadTest ../testclass/
+```
+
+  
+
+方法重写(`testclass/com/ch/ClassExtendTest.java`)：
+
+```java
+package com.fh;
+
+public class ClassExtendTest {
+    public static void main(String[] args) {
+        Person person = new Person();
+        print(person.say());
+
+        person = new Student(); // Student继承了Person
+        print(person.say());
+    }
+
+    public static native void print(int num);
+}
+```
+
+```
+./mini-jvm ClassExtendTest ../testclass/
 ```
 

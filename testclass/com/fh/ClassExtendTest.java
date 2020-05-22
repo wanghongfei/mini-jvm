@@ -5,7 +5,7 @@ public class ClassExtendTest {
         Person person = new Person();
         print(person.say());
 
-        person = new Student();
+        person = new Student(); // Student继承了Person
         print(person.say());
     }
 
