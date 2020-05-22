@@ -5,7 +5,7 @@ import (
 )
 
 func TestHelloNative(t *testing.T) {
-	miniJvm, err := NewMiniJvm("com.fh.HelloNative", []string{"../testclass/"})
+	miniJvm, err := NewMiniJvm("com.fh.ForLoopPrintTest", []string{"../testclass/"})
 	if nil != err {
 		t.Fatal(err)
 	}
@@ -17,7 +17,20 @@ func TestHelloNative(t *testing.T) {
 }
 
 func TestHelloClass(t *testing.T) {
-	miniJvm, err := NewMiniJvm("com.fh.HelloClass", []string{"../testclass/"})
+	miniJvm, err := NewMiniJvm("com.fh.NewSimpleObjectTest", []string{"../testclass/"})
+	if nil != err {
+		t.Fatal(err)
+	}
+
+	err = miniJvm.Start()
+	if nil != err {
+		t.Fatal(err)
+	}
+
+}
+
+func TestHelloMethod(t *testing.T) {
+	miniJvm, err := NewMiniJvm("com.fh.MethodReloadTest", []string{"../testclass/"})
 	if nil != err {
 		t.Fatal(err)
 	}

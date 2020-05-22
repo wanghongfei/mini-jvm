@@ -1,5 +1,5 @@
 package com.fh;
-public class HelloClass {
+public class NewSimpleObjectTest {
     public static void main(String[] args) {
         int sum = 0;
         for (int ix = 1; ix <= 100; ++ix) {
