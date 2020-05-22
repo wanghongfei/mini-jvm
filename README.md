@@ -80,7 +80,9 @@ const (
 
 ## 已实现的特性举例
 
-`mini_jvm_test.go`中有所有用例的单元测试。
+`mini_jvm_test.go`中有所有用例的单元测试；
+
+以下Java代码均使用Java8进行编译；
 
 
 
@@ -182,11 +184,11 @@ public class NewSimpleObjectTest {
 
 
 
-方法重写(`testclass/com/fh/MethodOverrideTest.java`)：
+方法重写(`testclass/com/fh/MethodReloadTest.java`)：
 
 ```java
 package com.fh;
-public class MethodOverrideTest {
+public class MethodReloadTest {
     public static void main(String[] args) {
         int sum = add(100, 200);
         print(sum);
@@ -206,6 +208,6 @@ public class MethodOverrideTest {
 ```
 
 ```
-./mini-jvm MethodOverrideTest ../testclass/
+./mini-jvm MethodReloadTest ../testclass/
 ```
 

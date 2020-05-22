@@ -1,5 +1,5 @@
 package com.fh;
-public class MethodOverrideTest {
+public class MethodReloadTest {
     public static void main(String[] args) {
         int sum = add(100, 200);
         print(sum);
