@@ -30,7 +30,7 @@ func TestHelloClass(t *testing.T) {
 }
 
 func TestHelloMethod(t *testing.T) {
-	miniJvm, err := NewMiniJvm("com.fh.MethodReloadTest", []string{"../testclass/"})
+	miniJvm, err := NewMiniJvm("com.fh.MethodOverrideTest", []string{"../testclass/"})
 	if nil != err {
 		t.Fatal(err)
 	}
