@@ -101,6 +101,7 @@ func (i *InterpretedExecutionEngine) execute(def *class.DefFile, methodName stri
 }
 
 func (i *InterpretedExecutionEngine) executeInFrame(def *class.DefFile, codeAttr *class.CodeAttr, frame *MethodStackFrame, lastFrame *MethodStackFrame) error {
+	isWideStatus := false
 	for {
 		// 取出pc指向的字节码
 		byteCode := codeAttr.Code[frame.pc]
@@ -196,58 +197,146 @@ func (i *InterpretedExecutionEngine) executeInFrame(def *class.DefFile, codeAttr
 
 			frame.opStack.Push(int(op))
 
+		case bcode.Ifle:
+			// 当栈顶int型数值小于等于0时跳转
+			err := i.bcodeIfCompZero(frame, codeAttr, func(op1 int, op2 int) bool {
+				return op1 <= op2
+			})
+
+			if nil != err {
+				return fmt.Errorf("failed to execute 'ifle': %w", err)
+			}
+		case bcode.Iflt:
+			// 当栈顶int型数值小于0时跳转
+			err := i.bcodeIfCompZero(frame, codeAttr, func(op1 int, op2 int) bool {
+				return op1 < op2
+			})
+
+			if nil != err {
+				return fmt.Errorf("failed to execute 'iflt': %w", err)
+			}
+		case bcode.Ifge:
+			// >= 0
+			err := i.bcodeIfCompZero(frame, codeAttr, func(op1 int, op2 int) bool {
+				return op1 >= op2
+			})
+
+			if nil != err {
+				return fmt.Errorf("failed to execute 'ifge': %w", err)
+			}
+		case bcode.Ifgt:
+			// > 0
+			err := i.bcodeIfCompZero(frame, codeAttr, func(op1 int, op2 int) bool {
+				return op1 > op2
+			})
+
+			if nil != err {
+				return fmt.Errorf("failed to execute 'ifgt': %w", err)
+			}
+		case bcode.Ifne:
+			// != 0
+			err := i.bcodeIfCompZero(frame, codeAttr, func(op1 int, op2 int) bool {
+				return op1 != op2
+			})
+
+			if nil != err {
+				return fmt.Errorf("failed to execute 'ifne': %w", err)
+			}
+		case bcode.Ifeq:
+			// == 0
+			err := i.bcodeIfCompZero(frame, codeAttr, func(op1 int, op2 int) bool {
+				return op1 == op2
+			})
+
+			if nil != err {
+				return fmt.Errorf("failed to execute 'ifeq': %w", err)
+			}
+
 		case bcode.Ificmpgt:
 			// 比较栈顶两int型数值大小, 当结果大于0时跳转
-
-			// 待比较的数
-			x, _ := frame.opStack.PopInt()
-			y, _ := frame.opStack.PopInt()
-
-			// 跳转的偏移量
-			twoByteNum := codeAttr.Code[frame.pc + 1 : frame.pc + 1 + 2]
-			var offset int16
-			err := binary.Read(bytes.NewBuffer(twoByteNum), binary.BigEndian, &offset)
+			err := i.bcodeIfComp(frame, codeAttr, func(op1 int, op2 int) bool {
+				return op2 - op1 > 0
+			})
 			if nil != err {
-				return fmt.Errorf("failed to read offset for if_icmpgt: %w", err)
+				return fmt.Errorf("failed to execute 'ificmpgt': %w", err)
 			}
-
-			if y - x > 0 {
-				frame.pc = frame.pc + int(offset) - 1
-
-			} else {
-				frame.pc += 2
-			}
-
 		case bcode.Ificmple:
 			// 比较栈顶两int型数值大小, 当结果<=0时跳转
-
-			// 待比较的数
-			x, _ := frame.opStack.PopInt()
-			y, _ := frame.opStack.PopInt()
-
-			// 跳转的偏移量
-			twoByteNum := codeAttr.Code[frame.pc + 1 : frame.pc + 1 + 2]
-			var offset int16
-			err := binary.Read(bytes.NewBuffer(twoByteNum), binary.BigEndian, &offset)
+			err := i.bcodeIfComp(frame, codeAttr, func(op1 int, op2 int) bool {
+				return op2 - op1 <= 0
+			})
 			if nil != err {
-				return fmt.Errorf("failed to read offset for if_icmpgt: %w", err)
+				return fmt.Errorf("failed to execute 'ificmple': %w", err)
+			}
+		case bcode.Ificmplt:
+			// 比较栈顶两int型数值大小, 当结果小于0时跳转
+			err := i.bcodeIfComp(frame, codeAttr, func(op1 int, op2 int) bool {
+				return op2 - op1 < 0
+			})
+			if nil != err {
+				return fmt.Errorf("failed to execute 'ificmplt': %w", err)
+			}
+		case bcode.Ificmpge:
+			// 比较栈顶两int型数值大小, 当结果大于等于0时跳转
+			err := i.bcodeIfComp(frame, codeAttr, func(op1 int, op2 int) bool {
+				return op2 - op1 >= 0
+			})
+			if nil != err {
+				return fmt.Errorf("failed to execute 'ificmpge': %w", err)
+			}
+		case bcode.Ificmpeq:
+			// 比较栈顶两int型数值大小, 当结果等于0时跳转
+			err := i.bcodeIfComp(frame, codeAttr, func(op1 int, op2 int) bool {
+				return op2 - op1 == 0
+			})
+			if nil != err {
+				return fmt.Errorf("failed to execute 'ificmpeq': %w", err)
+			}
+		case bcode.Ificmpne:
+			// 比较栈顶两int型数值大小, 当结果!=0时跳转
+			err := i.bcodeIfComp(frame, codeAttr, func(op1 int, op2 int) bool {
+				return op2 != op1
+			})
+			if nil != err {
+				return fmt.Errorf("failed to execute 'ificmpne': %w", err)
 			}
 
-			if y - x <= 0 {
-				frame.pc = frame.pc + int(offset) - 1
-
-			} else {
-				frame.pc += 2
-			}
 
 		case bcode.Iinc:
 			// 将第op1个slot的变量增加op2
-			op1 := codeAttr.Code[frame.pc + 1]
-			op2 := codeAttr.Code[frame.pc + 2]
-			frame.pc += 2
+			// iinc  byte constbyte
+			if !isWideStatus {
+				op1 := codeAttr.Code[frame.pc + 1]
+				op2 := int8(codeAttr.Code[frame.pc + 2])
+				frame.pc += 2
 
-			// frame.localVariablesTable[op1] = frame.localVariablesTable[op1] + int(op2)
-			frame.localVariablesTable[op1] = frame.GetLocalTableIntAt(int(op1)) + int(op2)
+				frame.localVariablesTable[op1] = frame.GetLocalTableIntAt(int(op1)) + int(op2)
+
+			} else {
+				// wide iinc byte1 byte2 constbyte1 constbyte2
+				twoByteNum := codeAttr.Code[frame.pc + 1 : frame.pc + 1 + 2]
+				var localVarIndex uint16
+				err := binary.Read(bytes.NewBuffer(twoByteNum), binary.BigEndian, &localVarIndex)
+				if nil != err {
+					return fmt.Errorf("failed to read local_var_index for iinc_w: %w", err)
+				}
+
+
+				twoByteNum = codeAttr.Code[frame.pc + 1 + 2 : frame.pc + 1 + 2 + 2]
+				var num int16
+				err = binary.Read(bytes.NewBuffer(twoByteNum), binary.BigEndian, &num)
+				if nil != err {
+					return fmt.Errorf("failed to read byte12 for iinc_w: %w", err)
+				}
+
+				frame.pc += 4
+
+				newVal := frame.GetLocalTableIntAt(int(localVarIndex)) + int(num)
+				frame.localVariablesTable[localVarIndex] = newVal
+
+				isWideStatus = false
+			}
+
 
 		case bcode.New:
 			// 创建一个对象, 并将其引用值压入栈顶
@@ -369,6 +458,10 @@ func (i *InterpretedExecutionEngine) executeInFrame(def *class.DefFile, codeAttr
 		case bcode.Return:
 			// 返回
 			exitLoop = true
+
+		case bcode.Wide:
+			// 加宽下一个字节码
+			isWideStatus = true
 
 		default:
 			return fmt.Errorf("unsupported byte code %s", hex.EncodeToString([]byte{byteCode}))
@@ -495,6 +588,52 @@ func (i *InterpretedExecutionEngine) invokeVirtual(def *class.DefFile, frame *Me
 
 	// 调用
 	return i.execute(targetDef, methodName, descriptor, frame)
+}
+
+func (i *InterpretedExecutionEngine) bcodeIfComp(frame *MethodStackFrame, codeAttr *class.CodeAttr, gotoJudgeFunc func(int, int) bool) error {
+	// 比较栈顶两int型数值大小
+
+	// 待比较的数
+	x, _ := frame.opStack.PopInt()
+	y, _ := frame.opStack.PopInt()
+
+	// 跳转的偏移量
+	twoByteNum := codeAttr.Code[frame.pc + 1 : frame.pc + 1 + 2]
+	var offset int16
+	err := binary.Read(bytes.NewBuffer(twoByteNum), binary.BigEndian, &offset)
+	if nil != err {
+		return fmt.Errorf("failed to read offset for if_icmpgt: %w", err)
+	}
+
+	if gotoJudgeFunc(x, y) {
+		frame.pc = frame.pc + int(offset) - 1
+
+	} else {
+		frame.pc += 2
+	}
+
+	return nil
+}
+
+func (i *InterpretedExecutionEngine) bcodeIfCompZero(frame *MethodStackFrame, codeAttr *class.CodeAttr, gotoJudgeFunc func(int, int) bool) error {
+	// 当栈顶int型数值小于0时跳转
+	// 跳转的偏移量
+	twoByteNum := codeAttr.Code[frame.pc + 1 : frame.pc + 1 + 2]
+	var offset int16
+	err := binary.Read(bytes.NewBuffer(twoByteNum), binary.BigEndian, &offset)
+	if nil != err {
+		return fmt.Errorf("failed to read offset for if_icmpgt: %w", err)
+	}
+
+	op, _ := frame.opStack.PopInt()
+	if gotoJudgeFunc(op, 0) {
+		frame.pc = frame.pc + int(offset) - 1
+
+	} else {
+		frame.pc += 2
+	}
+
+	return nil
 }
 
 func (i *InterpretedExecutionEngine) findCodeAttr(method *class.MethodInfo) (*class.CodeAttr, error) {

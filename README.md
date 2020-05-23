@@ -63,6 +63,17 @@ const (
 
 	Iinc = 0x84
 
+	Ifeq = 0x99
+	Ifne = 0x9a
+	Iflt = 0x9b
+	Ifge = 0x9c
+	Ifgt = 0x9d
+	Ifle = 0x9e
+
+	Ificmpeq = 0x9f
+	Ificmpne = 0xa0
+	Ificmplt = 0xa1
+	Ificmpge = 0xa2
 	Ificmpgt = 0xa3
 	Ificmple = 0xa4
 	Goto = 0xa7
@@ -79,6 +90,8 @@ const (
 	New = 0xbb
 
 	Ireturn = 0xac
+
+	Wide = 0xc4
 )
 ```
 
@@ -233,5 +246,56 @@ public class ClassExtendTest {
 
 ```
 ./mini-jvm ClassExtendTest ../testclass/
+```
+
+
+
+判断语句、自增语句：
+
+```java
+package com.fh;
+
+public class IfTest {
+    public static void main(String[] args) {
+        int sum = 0;
+
+        if (sum > 0) {
+            sum = 100;
+        }
+        if (sum >= 0) {
+            sum -= 200;
+        }
+        if (sum < 0) {
+            sum -= 100;
+        }
+        if (sum <= 0) {
+            sum -= 1;
+        }
+        if (sum == 0) {
+            sum += 2000;
+        }
+
+        print(sum); // -301
+
+        if (sum > 10) {
+
+        }
+        if (sum >= 10) {
+
+        }
+        if (sum < 10) {
+
+        }
+        if (sum <= 10) {
+
+        }
+        if (sum == 10) {
+
+        }
+        print(sum);
+    }
+
+    public static native void print(int num);
+
 ```
 
