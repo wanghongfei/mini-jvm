@@ -89,7 +89,7 @@ func (i *InterpretedExecutionEngine) execute(def *class.DefFile, methodName stri
 
 		if !isStatic {
 			// 将this引用塞入0的位置
-			obj, _ := lastFrame.opStack.PopObject()
+			obj, _ := lastFrame.opStack.PopReference()
 			frame.localVariablesTable[0] = obj
 		}
 	}
@@ -117,6 +117,21 @@ func (i *InterpretedExecutionEngine) executeInFrame(def *class.DefFile, codeAttr
 			frame.opStack.Push(1)
 		case bcode.Iconst2:
 			frame.opStack.Push(2)
+		case bcode.Iconst3:
+			frame.opStack.Push(3)
+		case bcode.Iconst4:
+			frame.opStack.Push(4)
+		case bcode.Iconst5:
+			frame.opStack.Push(5)
+
+		case bcode.Iaload:
+			// 将int型数组指定索引的值推送至栈顶
+			// Operand Stack
+			//..., arrayref, index →
+			//..., value
+			arrIndex, _ := frame.opStack.PopInt()
+			arrRef, _ := frame.opStack.PopReference()
+			frame.opStack.Push(arrRef.Array.Data[arrIndex])
 
 
 		case bcode.Istore1:
@@ -165,6 +180,15 @@ func (i *InterpretedExecutionEngine) executeInFrame(def *class.DefFile, codeAttr
 		case bcode.Astore2:
 			ref, _ := frame.opStack.Pop()
 			frame.localVariablesTable[2] = ref
+
+		case bcode.Iastore:
+			// 在int数组中存储元素
+			// stack: arrayref, index, value →
+			val, _ := frame.opStack.PopInt()
+			arrIndex, _ := frame.opStack.PopInt()
+			arrRef, _ := frame.opStack.PopReference()
+
+			arrRef.Array.Data[arrIndex] = val
 
 		case bcode.Dup:
 			// 复制栈顶数值并将复制值压入栈顶
@@ -418,8 +442,8 @@ func (i *InterpretedExecutionEngine) executeInFrame(def *class.DefFile, codeAttr
 
 			// 赋值
 			val, _ := frame.opStack.PopInt()
-			obj, _ := frame.opStack.PopObject()
-			obj.ObjectFields[fieldName].FieldValue = val
+			ref, _ := frame.opStack.PopReference()
+			ref.Object.ObjectFields[fieldName].FieldValue = val
 			// thisObj.ObjectFields[fieldName].FieldValue, _ = frame.opStack.PopInt()
 
 		case bcode.GetField:
@@ -440,13 +464,29 @@ func (i *InterpretedExecutionEngine) executeInFrame(def *class.DefFile, codeAttr
 			fieldName := def.ConstPool[nameAndType.NameIndex].(*class.Utf8InfoConst).String()
 
 			// 取出引用的对象
-			targetObj, _ := frame.opStack.PopObject()
+			targetObjRef, _ := frame.opStack.PopReference()
 
 			// 读取
-			val := targetObj.ObjectFields[fieldName].FieldValue
+			val := targetObjRef.Object.ObjectFields[fieldName].FieldValue
 			// 压栈
 			frame.opStack.Push(val)
 
+		case bcode.Newarray:
+			// newarray type(byte)
+			// 取出数组类型
+			arrayType := codeAttr.Code[frame.pc + 1]
+			frame.pc += 1
+
+			// 栈顶元素为数组长度
+			arrLen, _ := frame.opStack.PopInt()
+
+			arrRef, err := class.NewArray(arrLen, arrayType)
+			if nil != err {
+				return fmt.Errorf("failed to execute 'newarray': %w", err)
+			}
+
+			// 数组引用入栈
+			frame.opStack.Push(arrRef)
 
 		case bcode.Ireturn:
 			// 当前栈出栈, 值压如上一个栈
@@ -540,7 +580,7 @@ func (i *InterpretedExecutionEngine) invokeSpecial(def *class.DefFile, frame *Me
 	if "<init>" == methodName {
 		// 忽略构造器
 		// 消耗一个引用
-		frame.opStack.PopObject()
+		frame.opStack.PopReference()
 		return nil
 	}
 
@@ -560,8 +600,8 @@ func (i *InterpretedExecutionEngine) invokeVirtual(def *class.DefFile, frame *Me
 
 	// 找到操作数栈中的第一个引用
 	// 次引用即为实际类型
-	targetObj, _ := frame.opStack.GetUntilObject()
-	targetDef := targetObj.DefFile
+	targetObjRef, _ := frame.opStack.GetUntilObject()
+	targetDef := targetObjRef.Object.DefFile
 
 	// 取出引用的方法
 	methodRef := def.ConstPool[methodRefCpIndex].(*class.MethodRefConstInfo)
@@ -583,7 +623,7 @@ func (i *InterpretedExecutionEngine) invokeVirtual(def *class.DefFile, frame *Me
 	//}
 
 	// 取出栈顶对象引用
-	// targetObj, _ := frame.opStack.PopObject()
+	// targetObj, _ := frame.opStack.PopReference()
 
 
 	// 调用
@@ -669,7 +709,7 @@ func (i *InterpretedExecutionEngine) findMethod(def *class.DefFile, methodName s
 		parentClassRef := def.ConstPool[def.SuperClass].(*class.ClassInfoConstInfo)
 		// 取出父类全名
 		targetClassFullName := def.ConstPool[parentClassRef.FullClassNameIndex].(*class.Utf8InfoConst).String()
-		if "java/lang/Object" == targetClassFullName {
+		if "java/lang/Reference" == targetClassFullName {
 			break
 		}
 

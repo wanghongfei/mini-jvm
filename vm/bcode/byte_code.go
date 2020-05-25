@@ -6,6 +6,11 @@ const (
 	Iconst0 = 0x03
 	Iconst1 = 0x04
 	Iconst2 = 0x05
+	Iconst3 = 0x06
+	Iconst4 = 0x07
+	Iconst5 = 0x08
+
+	Iaload = 0x2e
 
 	Istore0 = 0x3b
 	Istore1 = 0x3c
@@ -27,6 +32,7 @@ const (
 	Astore0 = 0x4b
 	Astore1 = 0x4c
 	Astore2 = 0x4d
+	Iastore = 0x4f
 
 	Dup = 0x59
 
@@ -53,6 +59,8 @@ const (
 
 	GetField = 0xb4
 	Putfield = 0xb5
+
+	Newarray = 0xbc
 
 	Invokevirtual = 0xb6
 	Invokespecial = 0xb7

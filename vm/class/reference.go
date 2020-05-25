@@ -5,6 +5,30 @@ import (
 	"strings"
 )
 
+const (
+	ReferanceTypeObject = byte(0)
+	ReferanceTypeArray = byte(1)
+)
+
+// 表达Java中的引用类型
+type Reference struct {
+	// 引用的类型
+	// 0: object
+	// 1: array
+	RefType byte
+
+	Object *Object
+	Array *Array
+}
+
+type Array struct {
+	// 元素类型
+	Type byte
+
+	// 数据
+	Data []interface{}
+}
+
 type Object struct {
 	// class定义
 	DefFile *DefFile
@@ -21,7 +45,7 @@ type ObjectField struct {
 }
 
 // 创建对象;
-func NewObject(def *DefFile) (*Object, error) {
+func NewObject(def *DefFile) (*Reference, error) {
 	o := new(Object)
 	o.DefFile = def
 
@@ -46,7 +70,11 @@ func NewObject(def *DefFile) (*Object, error) {
 		o.ObjectFields[name] = f
 	}
 
-	return o, nil
+	return &Reference{
+		RefType: ReferanceTypeObject,
+		Object:  o,
+		Array:   nil,
+	}, nil
 }
 
 
@@ -67,4 +95,22 @@ func ParseMethodDescriptor(descriptor string) ([]string, string) {
 	retDesc := descriptor[argDescEndIndex + 1:]
 
 	return argList, retDesc
+}
+
+
+func NewArray(maxLen int, atype byte) (*Reference, error) {
+	if atype < 4 || atype > 11 {
+		return nil, fmt.Errorf("unsupported array type '%d'", atype)
+	}
+
+	arr := &Array{
+		Type: atype,
+		Data: make([]interface{}, maxLen),
+	}
+
+	return &Reference{
+		RefType: ReferanceTypeArray,
+		Object:  nil,
+		Array:   arr,
+	}, nil
 }

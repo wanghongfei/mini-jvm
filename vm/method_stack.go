@@ -67,6 +67,6 @@ func (f *MethodStackFrame) GetLocalTableIntAt(index int) int {
 	return f.localVariablesTable[index].(int)
 }
 
-func (f *MethodStackFrame) GetLocalTableObjectAt(index int) *class.Object {
-	return f.localVariablesTable[index].(*class.Object)
+func (f *MethodStackFrame) GetLocalTableObjectAt(index int) *class.Reference {
+	return f.localVariablesTable[index].(*class.Reference)
 }

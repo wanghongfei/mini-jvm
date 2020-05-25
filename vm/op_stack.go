@@ -65,13 +65,13 @@ func (s *OpStack) PopInt() (int, bool) {
 	return v, ok
 }
 
-func (s *OpStack) PopObject() (*class.Object, bool) {
+func (s *OpStack) PopReference() (*class.Reference, bool) {
 	elem, ok := s.Pop()
 	if !ok {
 		return nil, ok
 	}
 
-	v, ok := elem.(*class.Object)
+	v, ok := elem.(*class.Reference)
 	return v, ok
 }
 
@@ -85,17 +85,17 @@ func (s *OpStack) GetTopInt() (interface{}, bool) {
 	return v, ok
 }
 
-func (s *OpStack) GetTopObject() (*class.Object, bool) {
+func (s *OpStack) GetTopObject() (*class.Reference, bool) {
 	elem, ok := s.GetTop()
 	if !ok {
 		return nil, ok
 	}
 
-	v, ok := elem.(*class.Object)
+	v, ok := elem.(*class.Reference)
 	return v, ok
 }
 
-func (s *OpStack) GetUntilObject() (*class.Object, bool) {
+func (s *OpStack) GetUntilObject() (*class.Reference, bool) {
 
 	index := s.topIndex
 	for {
@@ -103,7 +103,7 @@ func (s *OpStack) GetUntilObject() (*class.Object, bool) {
 			break
 		}
 
-		v, ok := s.elems[index].(*class.Object)
+		v, ok := s.elems[index].(*class.Reference)
 		if ok {
 			return v, true
 		}
