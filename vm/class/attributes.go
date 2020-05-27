@@ -46,7 +46,7 @@ func (c *DefFile) ReadAttr(reader io.Reader) (interface{}, error) {
 	} else if "LineNumberTable" == attrName {
 		lineAttr, err := ReadLineNumberAttr(reader)
 		if nil != err {
-			return nil, fmt.Errorf("failed to read line_number_table attr: %w", err)
+			return nil, fmt.Errorf("failed to read LineNumberTable attr: %w", err)
 		}
 
 		return lineAttr, nil
@@ -54,7 +54,7 @@ func (c *DefFile) ReadAttr(reader io.Reader) (interface{}, error) {
 	} else if "SourceFile" == attrName {
 		srcAttr, err := ReadSourceFileAttr(reader)
 		if nil != err {
-			return nil, fmt.Errorf("failed to read source_file attr: %w", err)
+			return nil, fmt.Errorf("failed to read SourceFile attr: %w", err)
 		}
 
 		return srcAttr, nil
@@ -67,6 +67,14 @@ func (c *DefFile) ReadAttr(reader io.Reader) (interface{}, error) {
 		}
 
 		return struct{}{}, nil
+
+	} else if "InnerClasses" == attrName {
+		innerAttr, err := ReadInnerClassAttr(reader)
+		if nil != err {
+			return nil, fmt.Errorf("failed to read InnerClasses attr: %w", err)
+		}
+
+		return innerAttr, nil
 	}
 
 	return nil, fmt.Errorf("unsupported attr type '%s'", attrName)
@@ -411,6 +419,70 @@ func ReadLocalVariableAttr(reader io.Reader) (*LocalVariableAttr, error) {
 }
 
 
+
+type InnerClassAttr struct {
+	Length uint32
+	NumberOfClasses uint16
+	InnerClasses []*InnerClassInfo
+}
+
+type InnerClassInfo struct {
+	InnerClassInfoIndex uint16
+	OuterClassInfoIndex uint16
+	InnerNameIndex uint16
+	InnerClassAccessFlags uint16
+}
+
+func ReadInnerClassAttr(reader io.Reader) (*InnerClassAttr, error) {
+	length, err := utils.ReadInt32(reader)
+	if nil != err {
+		return nil, fmt.Errorf("failed to load length: %w", err)
+	}
+
+	numberOfClasses, err := utils.ReadInt16(reader)
+	if nil != err {
+		return nil, fmt.Errorf("failed to load number_of_classes: %w", err)
+	}
+
+	innerInfos := make([]*InnerClassInfo, 0, numberOfClasses)
+	for ix := 0; ix < int(numberOfClasses); ix++ {
+		innerIndex, err := utils.ReadInt16(reader)
+		if nil != err {
+			return nil, fmt.Errorf("failed to load inner_class_info_index: %w", err)
+		}
+
+		outerIndex, err := utils.ReadInt16(reader)
+		if nil != err {
+			return nil, fmt.Errorf("failed to load outer_class_info_index: %w", err)
+		}
+
+		nameIndex, err := utils.ReadInt16(reader)
+		if nil != err {
+			return nil, fmt.Errorf("failed to load inner_name_index: %w", err)
+		}
+
+		accessFlags, err := utils.ReadInt16(reader)
+		if nil != err {
+			return nil, fmt.Errorf("failed to load inner_class_access_flags: %w", err)
+		}
+
+		info := &InnerClassInfo{
+			InnerClassInfoIndex:   innerIndex,
+			OuterClassInfoIndex:   outerIndex,
+			InnerNameIndex:        nameIndex,
+			InnerClassAccessFlags: accessFlags,
+		}
+
+		innerInfos = append(innerInfos, info)
+	}
+
+	return &InnerClassAttr{
+		Length:          length,
+		NumberOfClasses: numberOfClasses,
+		InnerClasses:    innerInfos,
+	}, nil
+}
+
 type SourceFileAttr struct {
 	Length uint32
 	SourceFileIndex uint16
@@ -419,6 +491,7 @@ type SourceFileAttr struct {
 func (s *SourceFileAttr) String() string {
 	return "SourceFile"
 }
+
 
 func ReadSourceFileAttr(reader io.Reader) (*SourceFileAttr, error) {
 	length, err := utils.ReadInt32(reader)

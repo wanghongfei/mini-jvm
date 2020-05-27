@@ -426,6 +426,17 @@ func (i *InterpretedExecutionEngine) executeInFrame(def *class.DefFile, codeAttr
 				return fmt.Errorf("failed to execute 'invokevirtual': %w", err)
 			}
 
+		case bcode.Invokeinterface:
+			// invokeinterface
+			// indexbyte1
+			// indexbyte2
+			// count
+			// 0
+			err := i.invokeInterface(def, frame, codeAttr)
+			if nil != err {
+				return fmt.Errorf("failed to execute 'invokeinterface': %w", err)
+			}
+
 		case bcode.Putfield:
 			// 对象字段赋值
 			twoByteNum := codeAttr.Code[frame.pc + 1 : frame.pc + 1 + 2]
@@ -602,7 +613,7 @@ func (i *InterpretedExecutionEngine) invokeVirtual(def *class.DefFile, frame *Me
 	}
 
 	// 找到操作数栈中的第一个引用
-	// 次引用即为实际类型
+	// 此引用即为实际类型
 	targetObjRef, _ := frame.opStack.GetUntilObject()
 	targetDef := targetObjRef.Object.DefFile
 
@@ -631,6 +642,44 @@ func (i *InterpretedExecutionEngine) invokeVirtual(def *class.DefFile, frame *Me
 
 	// 调用
 	return i.execute(targetDef, methodName, descriptor, frame)
+}
+
+func (i *InterpretedExecutionEngine) invokeInterface(def *class.DefFile, frame *MethodStackFrame, codeAttr *class.CodeAttr) error {
+	// invokeinterface
+	// indexbyte1
+	// indexbyte2
+	// count
+	// 0
+
+	// 读取方法引用索引
+	twoByteNum := codeAttr.Code[frame.pc + 1 : frame.pc + 1 + 2]
+	var interfaceConstIndex int16
+	err := binary.Read(bytes.NewBuffer(twoByteNum), binary.BigEndian, &interfaceConstIndex)
+	if nil != err {
+		return fmt.Errorf("failed to read interface_const_index for 'invokeinterface': %w", err)
+	}
+
+	// 多消耗2 byte
+	twoByteNum = codeAttr.Code[frame.pc + 1 + 2 : frame.pc + 1 + 2 + 2]
+	var nothing int16
+	err = binary.Read(bytes.NewBuffer(twoByteNum), binary.BigEndian, &nothing)
+	if nil != err {
+		return fmt.Errorf("failed to read interface_const_index.nothing for 'invokeinterface': %w", err)
+	}
+
+	// 移动计数器
+	frame.pc += 4
+
+	// 取出接口方法引用
+	interfaceMethodRef := def.ConstPool[interfaceConstIndex].(*class.InterfaceMethodConst)
+	nameAndType := def.ConstPool[interfaceMethodRef.NameAndTypeIndex].(*class.NameAndTypeConst)
+
+	targetMethodName := def.ConstPool[nameAndType.NameIndex].(*class.Utf8InfoConst).String()
+	targetDescriptor := def.ConstPool[nameAndType.DescIndex].(*class.Utf8InfoConst).String()
+
+	// 出栈取出对象引用
+	ref, _ := frame.opStack.GetUntilObject()
+	return i.execute(ref.Object.DefFile, targetMethodName, targetDescriptor, frame)
 }
 
 func (i *InterpretedExecutionEngine) bcodeIfComp(frame *MethodStackFrame, codeAttr *class.CodeAttr, gotoJudgeFunc func(int, int) bool) error {

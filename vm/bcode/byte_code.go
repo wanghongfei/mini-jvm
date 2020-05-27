@@ -65,6 +65,7 @@ const (
 	Invokevirtual = 0xb6
 	Invokespecial = 0xb7
 	Invokestatic = 0xb8
+	Invokeinterface = 0xb9
 
 	New = 0xbb
 

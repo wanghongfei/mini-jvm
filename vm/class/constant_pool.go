@@ -167,3 +167,27 @@ func (o *Utf8InfoConst) String() string {
 	return string(o.Bytes)
 }
 
+type InterfaceMethodConst struct {
+	Tag uint8
+	InterfaceClassIndex uint16
+	NameAndTypeIndex uint16
+}
+
+func ReadInterfaceMethodConst(reader io.Reader, tag uint8) (*InterfaceMethodConst, error) {
+	cpInfo := new(InterfaceMethodConst)
+	cpInfo.Tag = tag
+
+	interfaceIndex, err := utils.ReadInt16(reader)
+	if nil != err {
+		return nil, err
+	}
+	cpInfo.InterfaceClassIndex = interfaceIndex
+
+	nameAndTypeIndex, err := utils.ReadInt16(reader)
+	if nil != err {
+		return nil, err
+	}
+	cpInfo.NameAndTypeIndex = nameAndTypeIndex
+
+	return cpInfo, nil
+}

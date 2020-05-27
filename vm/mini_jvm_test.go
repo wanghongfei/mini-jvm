@@ -135,3 +135,26 @@ func TestIntArray(t *testing.T) {
 		t.FailNow()
 	}
 }
+
+func TestInterface(t *testing.T) {
+	miniJvm, err := NewMiniJvm("com.fh.InterfaceTest", []string{"../testclass/"})
+	if nil != err {
+		t.Fatal(err)
+	}
+
+	err = miniJvm.Start()
+	if nil != err {
+		t.Fatal(err)
+	}
+
+	// assert
+	if 100 != miniJvm.DebugPrintHistory[0] {
+		t.FailNow()
+	}
+	if 100 != miniJvm.DebugPrintHistory[1] {
+		t.FailNow()
+	}
+	if 500 != miniJvm.DebugPrintHistory[2] {
+		t.FailNow()
+	}
+}
