@@ -35,6 +35,9 @@ func (i *InterpretedExecutionEngine) execute(def *class.DefFile, methodName stri
 		if "print" == methodName {
 			data, _ := lastFrame.opStack.PopInt()
 			fmt.Println(data)
+
+			i.miniJvm.DebugPrintHistory = append(i.miniJvm.DebugPrintHistory, data)
+
 			return nil
 		}
 
@@ -383,7 +386,7 @@ func (i *InterpretedExecutionEngine) executeInFrame(def *class.DefFile, codeAttr
 				return fmt.Errorf("failed to load class for '%s': %w", targetClassFullName, err)
 			}
 			// new
-			obj, err := class.NewObject(targetDefClass)
+			obj, err := class.NewObject(targetDefClass, i.miniJvm.MethodArea)
 			if nil != err {
 				return fmt.Errorf("failed to new object for '%s': %w", targetClassFullName, err)
 			}

@@ -14,6 +14,11 @@ func TestHelloNative(t *testing.T) {
 	if nil != err {
 		t.Fatal(err)
 	}
+
+	// assert
+	if 5050 != miniJvm.DebugPrintHistory[0] {
+		t.FailNow()
+	}
 }
 
 func TestHelloClass(t *testing.T) {
@@ -27,6 +32,10 @@ func TestHelloClass(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	// assert
+	if 5050 != miniJvm.DebugPrintHistory[0] {
+		t.FailNow()
+	}
 }
 
 func TestHelloMethod(t *testing.T) {
@@ -40,6 +49,10 @@ func TestHelloMethod(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	// assert
+	if 300 != miniJvm.DebugPrintHistory[0] {
+		t.FailNow()
+	}
 }
 
 func TestClassExtend(t *testing.T) {
@@ -51,6 +64,14 @@ func TestClassExtend(t *testing.T) {
 	err = miniJvm.Start()
 	if nil != err {
 		t.Fatal(err)
+	}
+
+	// assert
+	if 1 != miniJvm.DebugPrintHistory[0] {
+		t.FailNow()
+	}
+	if 10 != miniJvm.DebugPrintHistory[1] {
+		t.FailNow()
 	}
 }
 
@@ -64,6 +85,14 @@ func TestRecursion(t *testing.T) {
 	if nil != err {
 		t.Fatal(err)
 	}
+
+	// assert
+	if 1 != miniJvm.DebugPrintHistory[0] {
+		t.FailNow()
+	}
+	if 100 != miniJvm.DebugPrintHistory[99] {
+		t.FailNow()
+	}
 }
 
 func TestIfTest(t *testing.T) {
@@ -75,6 +104,14 @@ func TestIfTest(t *testing.T) {
 	err = miniJvm.Start()
 	if nil != err {
 		t.Fatal(err)
+	}
+
+	// assert
+	if -301 != miniJvm.DebugPrintHistory[0] {
+		t.FailNow()
+	}
+	if -301 != miniJvm.DebugPrintHistory[99] {
+		t.FailNow()
 	}
 }
 
@@ -89,4 +126,12 @@ func TestIntArray(t *testing.T) {
 		t.Fatal(err)
 	}
 
+
+	// assert
+	if 1 != miniJvm.DebugPrintHistory[0] {
+		t.FailNow()
+	}
+	if 2 != miniJvm.DebugPrintHistory[1] {
+		t.FailNow()
+	}
 }

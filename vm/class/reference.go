@@ -45,14 +45,63 @@ type ObjectField struct {
 }
 
 // 创建对象;
-func NewObject(def *DefFile) (*Reference, error) {
+func NewObject(def *DefFile, cl Loader) (*Reference, error) {
 	o := new(Object)
 	o.DefFile = def
 
 	// 分配字段数据
 	o.ObjectFields = make(map[string]*ObjectField)
 
-	// 初始化字段
+	// 分配字段, 包括父类里定义的字段
+	currentDef := def
+	for {
+		err := allocateFields(currentDef, o.ObjectFields)
+		if nil != err {
+			return nil, fmt.Errorf("failed to allcate field for class: %w", err)
+		}
+
+
+		// 父类
+		superClassCp := currentDef.ConstPool[currentDef.SuperClass].(*ClassInfoConstInfo)
+		superClassFullName := currentDef.ConstPool[superClassCp.FullClassNameIndex].(*Utf8InfoConst).String()
+		if "java/lang/Object" == superClassFullName {
+			break
+		}
+
+		superClassDef, err := cl.LoadClass(superClassFullName)
+		if nil != err {
+			return nil, fmt.Errorf("failed to load super class '%s' for field allcation: %w", superClassFullName, err)
+		}
+
+		currentDef = superClassDef
+	}
+
+
+	//for _, fieldInfo := range def.Fields {
+	//	f := new(ObjectField)
+	//
+	//	// 实例名
+	//	name := def.ConstPool[fieldInfo.NameIndex].(*Utf8InfoConst).String()
+	//	descriptor := def.ConstPool[fieldInfo.DescriptorIndex].(*Utf8InfoConst).String()
+	//	if "I" == descriptor {
+	//		f.FieldType = "int"
+	//		f.FieldValue = 0
+	//
+	//	} else {
+	//		return nil, fmt.Errorf("unsupported field descriptor '%s'", descriptor)
+	//	}
+	//
+	//	o.ObjectFields[name] = f
+	//}
+
+	return &Reference{
+		RefType: ReferanceTypeObject,
+		Object:  o,
+		Array:   nil,
+	}, nil
+}
+
+func allocateFields(def *DefFile, fields map[string]*ObjectField) error {
 	for _, fieldInfo := range def.Fields {
 		f := new(ObjectField)
 
@@ -64,17 +113,13 @@ func NewObject(def *DefFile) (*Reference, error) {
 			f.FieldValue = 0
 
 		} else {
-			return nil, fmt.Errorf("unsupported field descriptor '%s'", descriptor)
+			return fmt.Errorf("unsupported field descriptor '%s'", descriptor)
 		}
 
-		o.ObjectFields[name] = f
+		fields[name] = f
 	}
 
-	return &Reference{
-		RefType: ReferanceTypeObject,
-		Object:  o,
-		Array:   nil,
-	}, nil
+	return nil
 }
 
 

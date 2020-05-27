@@ -58,11 +58,5 @@ func ReadInt8(bufReader io.Reader) (uint8, error) {
 		return 0, err
 	}
 
-	var num uint8
-	err = binary.Read(bytes.NewBuffer(numBuf), binary.BigEndian, &num)
-	if nil != err {
-		return 0, err
-	}
-
-	return num, nil
+	return numBuf[0], nil
 }

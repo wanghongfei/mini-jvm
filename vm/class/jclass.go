@@ -45,7 +45,10 @@ type DefFile struct {
 }
 
 
-
+// 类加载器
+type Loader interface {
+	LoadClass(fullyQualifiedName string) (*DefFile, error)
+}
 
 const JVM_CLASS_FILE_MAGIC_NUMBER = 0xCAFEBABE
 
