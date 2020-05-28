@@ -39,6 +39,7 @@ func (s *OpStack) Pop() (interface{}, bool) {
 	}
 
 	data := s.elems[s.topIndex]
+	s.elems[s.topIndex] = nil
 	s.topIndex--
 
 	return data, true
