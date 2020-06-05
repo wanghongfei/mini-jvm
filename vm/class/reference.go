@@ -64,7 +64,7 @@ func NewObject(def *DefFile, cl Loader) (*Reference, error) {
 		// 父类
 		superClassCp := currentDef.ConstPool[currentDef.SuperClass].(*ClassInfoConstInfo)
 		superClassFullName := currentDef.ConstPool[superClassCp.FullClassNameIndex].(*Utf8InfoConst).String()
-		if "java/lang/Object" == superClassFullName {
+		if "java/lang/Object" == superClassFullName || "java/lang/Exception" == superClassFullName {
 			break
 		}
 

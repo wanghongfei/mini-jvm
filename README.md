@@ -4,7 +4,7 @@
 
 Mini-JVM首先会从`classpath`中加载主类的class文件，然后找到main方法的字节码解释执行；执行过程中如果遇到新的类符号引用，则会通过全限定性名再从`classpath`中加载新的类文件，以此类推；
 
-当前仅支持整数加法、循环、控制台输出、简单对象创建(不会调用构造方法)、部分继承特性、形参全部为int类型的方法调用、方法重载、方法重写、接口方法调用；其他特性还未实现，如异常、JDK类库加载、线程等等；
+当前仅支持整数加法、循环、控制台输出、简单对象创建(不会调用构造方法)、部分继承特性、形参全部为int类型的方法调用、方法重载、方法重写、接口方法调用；其他特性还未实现，如完整的异常支持、JDK类库加载、线程等等；
 
   
 
@@ -58,6 +58,8 @@ const (
 	Aload1 = 0x2b
 	Aload2 = 0x2c
 
+	Athrow = 0xbf
+
 	Astore0 = 0x4b
 	Astore1 = 0x4c
 	Astore2 = 0x4d
@@ -94,6 +96,7 @@ const (
 	Invokevirtual = 0xb6
 	Invokespecial = 0xb7
 	Invokestatic = 0xb8
+	Invokeinterface = 0xb9
 
 	New = 0xbb
 
@@ -101,6 +104,7 @@ const (
 
 	Wide = 0xc4
 )
+
 ```
 
 

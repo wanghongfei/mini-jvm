@@ -502,6 +502,12 @@ func (i *InterpretedExecutionEngine) executeInFrame(def *class.DefFile, codeAttr
 			// 数组引用入栈
 			frame.opStack.Push(arrRef)
 
+		case bcode.Athrow:
+			err := i.bcodeAthrow(def, frame, codeAttr)
+			if nil != err {
+				return fmt.Errorf("failed to execute 'athrow': %w", err)
+			}
+
 		case bcode.Ireturn:
 			// 当前栈出栈, 值压如上一个栈
 			op, _ := frame.opStack.PopInt()
@@ -680,6 +686,38 @@ func (i *InterpretedExecutionEngine) invokeInterface(def *class.DefFile, frame *
 	// 出栈取出对象引用
 	ref, _ := frame.opStack.GetUntilObject()
 	return i.execute(ref.Object.DefFile, targetMethodName, targetDescriptor, frame)
+}
+
+// 解释athrow指令
+func (i *InterpretedExecutionEngine) bcodeAthrow(def *class.DefFile, frame *MethodStackFrame, codeAttr *class.CodeAttr) error {
+	// 栈顶一定是异常对象引用
+	ref, _ := frame.opStack.GetTopObject()
+
+	// 栈顶异常全名
+	thisExpInfo, _ := ref.Object.DefFile.ConstPool[ref.Object.DefFile.ThisClass].(*class.ClassInfoConstInfo)
+	thisExpFullName := ref.Object.DefFile.ConstPool[thisExpInfo.FullClassNameIndex].(*class.Utf8InfoConst).String()
+
+	// 查异常表
+	for _, expTable := range codeAttr.ExceptionTable {
+		// 确保当前pc是在范围内
+		if frame.pc < int(expTable.StartPc) || frame.pc > int(expTable.EndPc) {
+			continue
+		}
+
+		// 取出目标异常类型
+		targetExpInfo := def.ConstPool[expTable.CatchType].(*class.ClassInfoConstInfo)
+		// 目标异常全名
+		targetExpFullName := def.ConstPool[targetExpInfo.FullClassNameIndex].(*class.Utf8InfoConst).String()
+
+		// 判断跟栈顶异常是否匹配
+		if targetExpFullName == thisExpFullName {
+			// 修改pc实现跳转
+			frame.pc = int(expTable.HandlerPc) - 1
+			return nil
+		}
+	}
+
+	return nil
 }
 
 func (i *InterpretedExecutionEngine) bcodeIfComp(frame *MethodStackFrame, codeAttr *class.CodeAttr, gotoJudgeFunc func(int, int) bool) error {

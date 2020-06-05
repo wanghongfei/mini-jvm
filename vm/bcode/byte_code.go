@@ -29,6 +29,8 @@ const (
 	Aload1 = 0x2b
 	Aload2 = 0x2c
 
+	Athrow = 0xbf
+
 	Astore0 = 0x4b
 	Astore1 = 0x4c
 	Astore2 = 0x4d
