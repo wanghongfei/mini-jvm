@@ -52,16 +52,22 @@ type Loader interface {
 
 const JVM_CLASS_FILE_MAGIC_NUMBER = 0xCAFEBABE
 
-// 加载class文件
+// 从文件中加载class
 func LoadClassFile(classPath string) (*DefFile, error) {
 	classBuf, err := utils.ReadAllFromFile(classPath)
 	if nil != err {
 		return nil, fmt.Errorf("failed to read class file, %w", err)
 	}
 
-	defFile := new(DefFile)
+	return LoadClassBuf(classBuf)
+}
 
-	bufReader := bytes.NewReader(classBuf)
+// 从字节路中加载class
+func LoadClassBuf(buf []byte) (*DefFile, error) {
+	defFile := new(DefFile)
+	bufReader := bytes.NewReader(buf)
+
+	var err error
 
 	// 魔术数
 	defFile.MagicNumber, err = utils.ReadInt32(bufReader)
@@ -185,6 +191,7 @@ func LoadClassFile(classPath string) (*DefFile, error) {
 
 	return defFile, nil
 }
+
 
 // 解析常量池
 func readConstPool(bufReader io.Reader, cpCount int) ([]interface{}, error) {
