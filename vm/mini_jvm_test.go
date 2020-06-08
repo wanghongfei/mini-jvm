@@ -182,3 +182,20 @@ func TestException(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+
+func TestHanoi(t *testing.T) {
+	miniJvm, err := NewMiniJvm("com.fh.Hanoi", []string{"../testclass/"})
+	if nil != err {
+		t.Fatal(err)
+	}
+
+	err = miniJvm.Start()
+	if nil != err {
+		t.Fatal(err)
+	}
+
+	if 127 != miniJvm.DebugPrintHistory[0] {
+		t.FailNow()
+	}
+}

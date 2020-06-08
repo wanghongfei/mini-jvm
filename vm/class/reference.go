@@ -112,6 +112,11 @@ func allocateFields(def *DefFile, fields map[string]*ObjectField) error {
 			f.FieldType = "int"
 			f.FieldValue = 0
 
+		} else if "C" == descriptor {
+			// char
+			f.FieldType = "char"
+			f.FieldValue = 'a'
+
 		} else {
 			return fmt.Errorf("unsupported field descriptor '%s'", descriptor)
 		}

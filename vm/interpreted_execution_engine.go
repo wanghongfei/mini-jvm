@@ -57,28 +57,6 @@ func (i *InterpretedExecutionEngine) execute(def *class.DefFile, methodName stri
 		nativeFunc(args...)
 
 		return nil
-
-		//data, _ := lastFrame.opStack.Pop()
-		//
-		//
-		//// 特殊处理输出函数, 因为System.out太复杂了
-		//if strings.HasPrefix(methodName, "print") {
-		//	// 规定: java的native print方法只能有一个参数, 类型不限
-		//	data, _ := lastFrame.opStack.Pop()
-		//
-		//	if strings.HasSuffix(methodName, "Char") {
-		//		fmt.Printf("%c\n", data)
-		//
-		//	} else {
-		//		fmt.Println(data)
-		//	}
-		//
-		//	i.miniJvm.DebugPrintHistory = append(i.miniJvm.DebugPrintHistory, data)
-		//
-		//	return nil
-		//}
-		//
-		//return fmt.Errorf("native method '%s' is unsupported", methodName)
 	}
 
 	// 提取code属性
@@ -113,18 +91,32 @@ func (i *InterpretedExecutionEngine) execute(def *class.DefFile, methodName stri
 		// 取出方法描述符
 		descriptor := def.ConstPool[method.DescriptorIndex].(*class.Utf8InfoConst).String()
 		// 解析描述符
-		argList, _ := class.ParseMethodDescriptor(descriptor)
-		// 将参数保存到新栈帧的本地变量表中
-		for ix, arg := range argList {
-			// 是int参数
-			if "I" == arg {
+		argDespList, _ := class.ParseMethodDescriptor(descriptor)
+		// 临时保存参数列表
+		argList := make([]interface{}, 0, len(argDespList))
+		// 按参数数量出栈, 取出参数
+		for _, arg := range argDespList {
+			// 是int/char参数
+			if "I" == arg || "C" == arg {
 				// 从上一个栈帧中出栈, 保存到新栈帧的localVarTable中
 				op, _ := lastFrame.opStack.PopInt()
-				frame.localVariablesTable[ix + localVarStartIndexOffset] = op
+				argList = append(argList, op)
+
+				// frame.localVariablesTable[ix + localVarStartIndexOffset] = op
 
 			} else {
 				return fmt.Errorf("unsupported argument descriptor '%s' in '%s'", arg, descriptor)
 			}
+		}
+
+		// 反转参数列表(因出栈顺序跟实际参数顺序相反)
+		for ix := 0; ix < len(argList) / 2; ix++ {
+			argList[ix], argList[len(argList) - 1 - ix] = argList[len(argList) - 1 - ix], argList[ix]
+		}
+
+		// 放入变量曹
+		for ix, arg := range argList {
+			frame.localVariablesTable[ix + localVarStartIndexOffset] = arg
 		}
 
 		if !isStatic {
@@ -195,6 +187,18 @@ func (i *InterpretedExecutionEngine) executeInFrame(def *class.DefFile, codeAttr
 			top, _ := frame.opStack.PopInt()
 			frame.localVariablesTable[3] = top
 
+		case bcode.Lstore1:
+			// 将栈顶long型数值存入本地变量
+			top, _ := frame.opStack.Pop()
+			frame.localVariablesTable[1] = top
+
+		case bcode.Iload:
+			// Load int from local variable
+			// ilaod index
+			index := codeAttr.Code[frame.pc + 1]
+			frame.pc++
+
+			frame.opStack.Push(frame.localVariablesTable[index])
 		case bcode.Iload0:
 			// 将第1个slot中的值压栈
 			frame.opStack.Push(frame.localVariablesTable[0])
@@ -216,6 +220,15 @@ func (i *InterpretedExecutionEngine) executeInFrame(def *class.DefFile, codeAttr
 			// 将第3个引用类型本地变量推送至栈顶
 			ref := frame.GetLocalTableObjectAt(2)
 			frame.opStack.Push(ref)
+
+		case bcode.Istore:
+			// istore index
+			// ..., value →
+			idx := codeAttr.Code[frame.pc + 1]
+			frame.pc++
+
+			val, _ := frame.opStack.Pop()
+			frame.localVariablesTable[idx] = val
 
 		case bcode.Astore0:
 			// 将栈顶引用型数值存入本地变量
@@ -343,6 +356,7 @@ func (i *InterpretedExecutionEngine) executeInFrame(def *class.DefFile, codeAttr
 		case bcode.Ificmple:
 			// 比较栈顶两int型数值大小, 当结果<=0时跳转
 			err := i.bcodeIfComp(frame, codeAttr, func(op1 int, op2 int) bool {
+				// fmt.Printf("%v compare %v\n", op1, op2)
 				return op2 - op1 <= 0
 			})
 			if nil != err {
@@ -380,6 +394,15 @@ func (i *InterpretedExecutionEngine) executeInFrame(def *class.DefFile, codeAttr
 			if nil != err {
 				return fmt.Errorf("failed to execute 'ificmpne': %w", err)
 			}
+
+		case bcode.Isub:
+			// ..., value1, value2 →
+			// The int result is value1 - value2. The result is pushed onto the operand stack.
+			val2, _ := frame.opStack.PopInt()
+			val1, _ := frame.opStack.PopInt()
+			val := val1 - val2
+
+			frame.opStack.Push(val)
 
 
 		case bcode.Iinc:

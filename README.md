@@ -51,6 +51,7 @@ const (
 	Bipush = 0x10
 	Sipush = 0x11
 
+	Iload = 0x15
 	Iload0 = 0x1a
 	Iload1 = 0x1b
 	Iload2 = 0x1c
@@ -62,6 +63,9 @@ const (
 
 	Athrow = 0xbf
 
+	Istore = 0x36
+	Lstore1 = 0x40
+
 	Astore0 = 0x4b
 	Astore1 = 0x4c
 	Astore2 = 0x4d
@@ -72,6 +76,7 @@ const (
 	Dup = 0x59
 
 	Iadd = 0x60
+	Isub = 0x64
 
 	Iinc = 0x84
 
@@ -120,6 +125,51 @@ const (
 以下Java代码均使用Java8进行编译；
 
   
+
+著名的汉诺塔问题(`testclass/com/fh/Hanoi.java`)：
+
+```java
+package com.fh;
+
+public class Hanoi {
+    final static char A = 1;  //设置3个字符标记3根柱子，只是标记作用，实际计算中用不到。
+    final static char B = 2;
+    final static char C = 3;
+
+    private int steps = 0;  //用于记录总共移动的次数
+
+    public static void main(String[] args) {
+        Hanoi hanoi = new Hanoi();
+        hanoi.move(7, A, B, C);
+
+        printInt(hanoi.getSteps());
+    }
+
+    public void move(int n, char A, char B, char C) {
+        if (n > 1) {
+            move(n - 1, A, C, B);  //将 n - 1 个盘子从 A 移动到 B 上
+            move(n - 1, B, C, A);  //将 n - 1 个盘子从 B 移动到 C 上
+        }
+
+        steps++;
+    }
+
+    public int getSteps() {
+        return this.steps;
+    }
+
+    public static native void printInt(int num);
+}
+
+```
+
+```shell
+./mini-jvm Hanoi ../testclass/  # 输出127
+```
+
+
+
+
 
 计算从1加到100的值(`testclass/com/fh/ForLoopPrintTest.java`)：
 

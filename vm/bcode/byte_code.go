@@ -22,6 +22,7 @@ const (
 	Bipush = 0x10
 	Sipush = 0x11
 
+	Iload = 0x15
 	Iload0 = 0x1a
 	Iload1 = 0x1b
 	Iload2 = 0x1c
@@ -33,6 +34,9 @@ const (
 
 	Athrow = 0xbf
 
+	Istore = 0x36
+	Lstore1 = 0x40
+
 	Astore0 = 0x4b
 	Astore1 = 0x4c
 	Astore2 = 0x4d
@@ -43,6 +47,7 @@ const (
 	Dup = 0x59
 
 	Iadd = 0x60
+	Isub = 0x64
 
 	Iinc = 0x84
 
