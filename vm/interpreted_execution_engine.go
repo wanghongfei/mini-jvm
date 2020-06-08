@@ -8,7 +8,6 @@ import (
 	"github.com/wanghongfei/mini-jvm/vm/accflag"
 	"github.com/wanghongfei/mini-jvm/vm/bcode"
 	"github.com/wanghongfei/mini-jvm/vm/class"
-	"strings"
 )
 
 // 解释执行引擎
@@ -31,25 +30,55 @@ func (i *InterpretedExecutionEngine) execute(def *class.DefFile, methodName stri
 
 	// 解析访问标记
 	flagMap := accflag.ParseAccFlags(method.AccessFlags)
+	// 是native方法
 	if _, ok := flagMap[accflag.Native]; ok {
-		// 特殊处理输出函数, 因为System.out太复杂了
-		if strings.HasPrefix(methodName, "print") {
-			// 规定: java的native print方法只能有一个参数, 类型不限
-			data, _ := lastFrame.opStack.Pop()
-
-			if strings.HasSuffix(methodName, "Char") {
-				fmt.Printf("%c\n", data)
-
-			} else {
-				fmt.Println(data)
-			}
-
-			i.miniJvm.DebugPrintHistory = append(i.miniJvm.DebugPrintHistory, data)
-
-			return nil
+		// 查本地方发表
+		nativeFunc, argCount := i.miniJvm.NativeMethodTable.FindMethod(methodName, methodDescriptor)
+		if nil == nativeFunc {
+			// 该本地方法尚未被支持
+			return fmt.Errorf("unsupported native method '%s'", method)
 		}
 
-		return fmt.Errorf("native method '%s' is unsupported", methodName)
+		// 从操作数栈取出argCount个参数
+		args := make([]interface{}, 0, argCount)
+		for ix := 0; ix < argCount; ix++ {
+			arg, _ := lastFrame.opStack.Pop()
+			args = append(args, arg)
+		}
+
+		// 因为出栈顺序跟实际参数顺序是相反的, 所以需要反转数组
+		for ix := 0; ix < argCount / 2; ix++ {
+			args[ix], args[argCount - 1 - ix] = args[argCount - 1 - ix], args[ix]
+		}
+
+		i.miniJvm.DebugPrintHistory = append(i.miniJvm.DebugPrintHistory, args...)
+
+		// 调用go函数
+		nativeFunc(args...)
+
+		return nil
+
+		//data, _ := lastFrame.opStack.Pop()
+		//
+		//
+		//// 特殊处理输出函数, 因为System.out太复杂了
+		//if strings.HasPrefix(methodName, "print") {
+		//	// 规定: java的native print方法只能有一个参数, 类型不限
+		//	data, _ := lastFrame.opStack.Pop()
+		//
+		//	if strings.HasSuffix(methodName, "Char") {
+		//		fmt.Printf("%c\n", data)
+		//
+		//	} else {
+		//		fmt.Println(data)
+		//	}
+		//
+		//	i.miniJvm.DebugPrintHistory = append(i.miniJvm.DebugPrintHistory, data)
+		//
+		//	return nil
+		//}
+		//
+		//return fmt.Errorf("native method '%s' is unsupported", methodName)
 	}
 
 	// 提取code属性

@@ -17,6 +17,9 @@ type MiniJvm struct {
 	// 执行引擎
 	ExecutionEngine ExecutionEngine
 
+	// 本地方法表
+	NativeMethodTable *NativeMethodTable
+
 	// 保存调用print的历史记录, 单元测试用
 	DebugPrintHistory []interface{}
 }
@@ -30,6 +33,7 @@ func NewMiniJvm(mainClass string, classPaths[] string) (*MiniJvm, error) {
 		return nil, fmt.Errorf("invalid main class '%s'", mainClass)
 	}
 
+	// 方法区
 	ma, err := NewMethodArea(classPaths)
 	if nil != err {
 		return nil, fmt.Errorf("unabled to create method area: %w", err)
@@ -41,7 +45,18 @@ func NewMiniJvm(mainClass string, classPaths[] string) (*MiniJvm, error) {
 		DebugPrintHistory: make([]interface{}, 0, 3),
 	}
 
+	// 执行引擎
 	vm.ExecutionEngine = NewInterpretedExecutionEngine(vm)
+
+	// 本地方法表
+	nativeMethodTable := NewNativeMethodTable()
+	vm.NativeMethodTable = nativeMethodTable
+	// 注册本地方法
+	nativeMethodTable.RegisterMethod("print", "(I)V", PrintInt)
+	nativeMethodTable.RegisterMethod("printInt", "(I)V", PrintInt)
+	nativeMethodTable.RegisterMethod("printInt2", "(II)V", PrintInt2)
+	nativeMethodTable.RegisterMethod("printChar", "(C)V", PrintChar)
+
 	return vm, nil
 }
 
