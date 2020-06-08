@@ -41,6 +41,8 @@ const (
 
 	Iaload = 0x2e
 
+	Caload = 0x34
+
 	Istore0 = 0x3b
 	Istore1 = 0x3c
 	Istore2 = 0x3d
@@ -64,6 +66,8 @@ const (
 	Astore1 = 0x4c
 	Astore2 = 0x4d
 	Iastore = 0x4f
+
+	Castore = 0x55
 
 	Dup = 0x59
 

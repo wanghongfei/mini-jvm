@@ -115,7 +115,7 @@ func TestIfTest(t *testing.T) {
 	}
 }
 
-func TestIntArray(t *testing.T) {
+func TestArray(t *testing.T) {
 	miniJvm, err := NewMiniJvm("com.fh.ArrayTest", []string{"../testclass/"})
 	if nil != err {
 		t.Fatal(err)

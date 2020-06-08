@@ -17,8 +17,8 @@ type MiniJvm struct {
 	// 执行引擎
 	ExecutionEngine ExecutionEngine
 
-	// 保存调用print的历史几率, 单元测试用
-	DebugPrintHistory []int
+	// 保存调用print的历史记录, 单元测试用
+	DebugPrintHistory []interface{}
 }
 
 type ExecutionEngine interface {
@@ -38,7 +38,7 @@ func NewMiniJvm(mainClass string, classPaths[] string) (*MiniJvm, error) {
 	vm := &MiniJvm{
 		MethodArea: ma,
 		MainClass:  strings.ReplaceAll(mainClass, ".", "/"),
-		DebugPrintHistory: make([]int, 0, 3),
+		DebugPrintHistory: make([]interface{}, 0, 3),
 	}
 
 	vm.ExecutionEngine = NewInterpretedExecutionEngine(vm)

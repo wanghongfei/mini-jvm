@@ -8,6 +8,7 @@ import (
 	"github.com/wanghongfei/mini-jvm/vm/accflag"
 	"github.com/wanghongfei/mini-jvm/vm/bcode"
 	"github.com/wanghongfei/mini-jvm/vm/class"
+	"strings"
 )
 
 // 解释执行引擎
@@ -32,9 +33,16 @@ func (i *InterpretedExecutionEngine) execute(def *class.DefFile, methodName stri
 	flagMap := accflag.ParseAccFlags(method.AccessFlags)
 	if _, ok := flagMap[accflag.Native]; ok {
 		// 特殊处理输出函数, 因为System.out太复杂了
-		if "print" == methodName {
-			data, _ := lastFrame.opStack.PopInt()
-			fmt.Println(data)
+		if strings.HasPrefix(methodName, "print") {
+			// 规定: java的native print方法只能有一个参数, 类型不限
+			data, _ := lastFrame.opStack.Pop()
+
+			if strings.HasSuffix(methodName, "Char") {
+				fmt.Printf("%c\n", data)
+
+			} else {
+				fmt.Println(data)
+			}
 
 			i.miniJvm.DebugPrintHistory = append(i.miniJvm.DebugPrintHistory, data)
 
@@ -136,6 +144,14 @@ func (i *InterpretedExecutionEngine) executeInFrame(def *class.DefFile, codeAttr
 			arrRef, _ := frame.opStack.PopReference()
 			frame.opStack.Push(arrRef.Array.Data[arrIndex])
 
+		case bcode.Caload:
+			// 将char型数组指定索引的值推送至栈顶
+			// Operand Stack
+			//..., arrayref, index →
+			//..., value
+			arrIndex, _ := frame.opStack.PopInt()
+			arrRef, _ := frame.opStack.PopReference()
+			frame.opStack.Push(arrRef.Array.Data[arrIndex])
 
 		case bcode.Istore1:
 			// 将栈顶int型数值存入第二个本地变量
@@ -191,6 +207,14 @@ func (i *InterpretedExecutionEngine) executeInFrame(def *class.DefFile, codeAttr
 			arrIndex, _ := frame.opStack.PopInt()
 			arrRef, _ := frame.opStack.PopReference()
 
+			arrRef.Array.Data[arrIndex] = val
+
+		case bcode.Castore:
+			// Store into char array
+			// stack: arrayref, index, value →
+			val, _ := frame.opStack.Pop()
+			arrIndex, _ := frame.opStack.PopInt()
+			arrRef, _ := frame.opStack.PopReference()
 			arrRef.Array.Data[arrIndex] = val
 
 		case bcode.Dup:
