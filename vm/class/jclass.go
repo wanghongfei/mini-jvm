@@ -42,6 +42,10 @@ type DefFile struct {
 	// 属性
 	AttrCount uint16
 	Attrs []interface{}
+
+	// 保存static字段
+	// key: 字段名
+	ParsedStaticFields map[string]*ObjectField
 }
 
 
@@ -187,6 +191,14 @@ func LoadClassBuf(buf []byte) (*DefFile, error) {
 		}
 
 		defFile.Attrs = append(defFile.Attrs, attr)
+	}
+
+
+	// 分配static字段
+	defFile.ParsedStaticFields = make(map[string]*ObjectField)
+	err = allocateFields(defFile, defFile.ParsedStaticFields)
+	if nil != err {
+		return nil, fmt.Errorf("failed to allocate static fields: %w", err)
 	}
 
 	return defFile, nil
