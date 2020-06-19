@@ -32,6 +32,9 @@ const (
 	Aload1 = 0x2b
 	Aload2 = 0x2c
 
+	Getstatic = 0xb2
+	Putstatic = 0xb3
+
 	Athrow = 0xbf
 
 	Istore = 0x36

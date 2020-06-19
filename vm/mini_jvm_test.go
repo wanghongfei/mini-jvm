@@ -1,6 +1,7 @@
 package vm
 
 import (
+	"github.com/wanghongfei/mini-jvm/vm/class"
 	"testing"
 )
 
@@ -212,13 +213,10 @@ func TestStaticField(t *testing.T) {
 	}
 
 	// assert
-	//if 100 != miniJvm.DebugPrintHistory[0] {
-	//	t.FailNow()
-	//}
-	//if 100 != miniJvm.DebugPrintHistory[1] {
-	//	t.FailNow()
-	//}
-	//if 500 != miniJvm.DebugPrintHistory[2] {
-	//	t.FailNow()
-	//}
+	if 100 != miniJvm.DebugPrintHistory[0].(*class.ObjectField).FieldValue {
+		t.FailNow()
+	}
+	if 400 != miniJvm.DebugPrintHistory[1].(*class.ObjectField).FieldValue {
+		t.FailNow()
+	}
 }

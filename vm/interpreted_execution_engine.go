@@ -21,6 +21,10 @@ func (i *InterpretedExecutionEngine) Execute(def *class.DefFile, methodName stri
 	return i.execute(def, methodName, "([Ljava/lang/String;)V", nil)
 }
 
+func (i *InterpretedExecutionEngine) ExecuteWithDescriptor(def *class.DefFile, methodName, descriptor string) error {
+	return i.execute(def, methodName, descriptor, nil)
+}
+
 func (i *InterpretedExecutionEngine) execute(def *class.DefFile, methodName string, methodDescriptor string, lastFrame *MethodStackFrame) error {
 	// 查找方法
 	method, err := i.findMethod(def, methodName, methodDescriptor)
@@ -513,6 +517,27 @@ func (i *InterpretedExecutionEngine) executeInFrame(def *class.DefFile, codeAttr
 				return fmt.Errorf("failed to execute 'invokeinterface': %w", err)
 			}
 
+		case bcode.Getstatic:
+			// format: getstatic byte1 byte2
+			// Operand Stack
+			// ..., →
+			// ..., value
+			err := i.bcodeGetStatic(def, frame, codeAttr)
+			if nil != err {
+				return fmt.Errorf("failed to execute 'getstatic': %w", err)
+			}
+
+		case bcode.Putstatic:
+			// putstatic b1 b2
+			// Operand Stack
+			//..., value →
+			//...
+			err := i.bcodePutStatic(def, frame, codeAttr)
+			if nil != err {
+				return fmt.Errorf("failed to execute 'putstatic': %w", err)
+			}
+
+
 		case bcode.Putfield:
 			// 对象字段赋值
 			twoByteNum := codeAttr.Code[frame.pc + 1 : frame.pc + 1 + 2]
@@ -796,6 +821,85 @@ func (i *InterpretedExecutionEngine) bcodeAthrow(def *class.DefFile, frame *Meth
 	return nil
 }
 
+// 读取static字段
+// format: getstatic byte1 byte2
+// Operand Stack
+// ..., →
+// ..., value
+func (i *InterpretedExecutionEngine) bcodeGetStatic(def *class.DefFile, frame *MethodStackFrame, codeAttr *class.CodeAttr) error {
+	// 静态字段在cp里的index
+	twoByte := codeAttr.Code[frame.pc + 1 : frame.pc + 1 + 2]
+	var fieldCpIndex int16
+	err := binary.Read(bytes.NewBuffer(twoByte), binary.BigEndian, &fieldCpIndex)
+	if nil != err {
+		return fmt.Errorf("failed to read static field index: %w", err)
+	}
+
+	frame.pc += 2
+
+	// 静态字段cp信息
+	fieldInfo := def.ConstPool[fieldCpIndex].(*class.FieldRefConstInfo)
+	// 取出字段所属class
+	targetClassInfo := def.ConstPool[fieldInfo.ClassIndex].(*class.ClassInfoConstInfo)
+	// 目标class全名
+	targetClassFullName := def.ConstPool[targetClassInfo.FullClassNameIndex].(*class.Utf8InfoConst).String()
+	// 加载
+	targetClassDef, err := i.miniJvm.findDefClass(targetClassFullName)
+	if nil != err {
+		return fmt.Errorf("failed to load target class '%s':%w", targetClassFullName, err)
+	}
+
+	// 字段nameAndType
+	nameAndTypeInfo := def.ConstPool[fieldInfo.NameAndTypeIndex].(*class.NameAndTypeConst)
+	fieldName := def.ConstPool[nameAndTypeInfo.NameIndex].(*class.Utf8InfoConst).String()
+	// fieldDesc := def.ConstPool[nameAndTypeInfo.DescIndex].(*class.Utf8InfoConst).String()
+
+	// 查找目标字段
+	objectField := targetClassDef.ParsedStaticFields[fieldName]
+	// 压栈
+	frame.opStack.Push(objectField)
+
+	return nil
+}
+
+func (i *InterpretedExecutionEngine) bcodePutStatic(def *class.DefFile, frame *MethodStackFrame, codeAttr *class.CodeAttr) error {
+	// 静态字段在cp里的index
+	twoByte := codeAttr.Code[frame.pc + 1 : frame.pc + 1 + 2]
+	var fieldCpIndex int16
+	err := binary.Read(bytes.NewBuffer(twoByte), binary.BigEndian, &fieldCpIndex)
+	if nil != err {
+		return fmt.Errorf("failed to read static field index: %w", err)
+	}
+
+	frame.pc += 2
+
+	// 静态字段cp信息
+	fieldInfo := def.ConstPool[fieldCpIndex].(*class.FieldRefConstInfo)
+	// 取出字段所属class
+	targetClassInfo := def.ConstPool[fieldInfo.ClassIndex].(*class.ClassInfoConstInfo)
+	// 目标class全名
+	targetClassFullName := def.ConstPool[targetClassInfo.FullClassNameIndex].(*class.Utf8InfoConst).String()
+	// 加载
+	targetClassDef, err := i.miniJvm.findDefClass(targetClassFullName)
+	if nil != err {
+		return fmt.Errorf("failed to load target class '%s':%w", targetClassFullName, err)
+	}
+
+	// 字段nameAndType
+	nameAndTypeInfo := def.ConstPool[fieldInfo.NameAndTypeIndex].(*class.NameAndTypeConst)
+	fieldName := def.ConstPool[nameAndTypeInfo.NameIndex].(*class.Utf8InfoConst).String()
+	// fieldDesc := def.ConstPool[nameAndTypeInfo.DescIndex].(*class.Utf8InfoConst).String()
+
+
+	// 出栈
+	val, _ := frame.opStack.Pop()
+
+	// set字段
+	targetClassDef.ParsedStaticFields[fieldName] = class.NewObjectField(val)
+
+	return nil
+}
+
 func (i *InterpretedExecutionEngine) bcodeIfComp(frame *MethodStackFrame, codeAttr *class.CodeAttr, gotoJudgeFunc func(int, int) bool) error {
 	// 比较栈顶两int型数值大小
 
@@ -863,8 +967,8 @@ func (i *InterpretedExecutionEngine) findMethod(def *class.DefFile, methodName s
 	currentClassDef := def
 	for {
 		for _, method := range currentClassDef.Methods {
-			name := def.ConstPool[method.NameIndex].(*class.Utf8InfoConst).String()
-			descriptor := def.ConstPool[method.DescriptorIndex].(*class.Utf8InfoConst).String()
+			name := currentClassDef.ConstPool[method.NameIndex].(*class.Utf8InfoConst).String()
+			descriptor := currentClassDef.ConstPool[method.DescriptorIndex].(*class.Utf8InfoConst).String()
 			// 匹配简单名和描述符
 			if name == methodName && descriptor == methodDescriptor {
 				return method, nil
@@ -872,10 +976,10 @@ func (i *InterpretedExecutionEngine) findMethod(def *class.DefFile, methodName s
 		}
 
 		// 从父类中寻找
-		parentClassRef := def.ConstPool[def.SuperClass].(*class.ClassInfoConstInfo)
+		parentClassRef := currentClassDef.ConstPool[currentClassDef.SuperClass].(*class.ClassInfoConstInfo)
 		// 取出父类全名
-		targetClassFullName := def.ConstPool[parentClassRef.FullClassNameIndex].(*class.Utf8InfoConst).String()
-		if "java/lang/Reference" == targetClassFullName {
+		targetClassFullName := currentClassDef.ConstPool[parentClassRef.FullClassNameIndex].(*class.Utf8InfoConst).String()
+		if "java/lang/Object" == targetClassFullName {
 			break
 		}
 

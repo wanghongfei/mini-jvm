@@ -26,6 +26,8 @@ type MiniJvm struct {
 
 type ExecutionEngine interface {
 	Execute(file *class.DefFile, methodName string) error
+
+	ExecuteWithDescriptor(file *class.DefFile, methodName string, descriptor string) error
 }
 
 func NewMiniJvm(mainClass string, classPaths[] string) (*MiniJvm, error) {
@@ -33,17 +35,19 @@ func NewMiniJvm(mainClass string, classPaths[] string) (*MiniJvm, error) {
 		return nil, fmt.Errorf("invalid main class '%s'", mainClass)
 	}
 
-	// 方法区
-	ma, err := NewMethodArea(classPaths)
-	if nil != err {
-		return nil, fmt.Errorf("unabled to create method area: %w", err)
-	}
 
 	vm := &MiniJvm{
-		MethodArea: ma,
+		MethodArea: nil,
 		MainClass:  strings.ReplaceAll(mainClass, ".", "/"),
 		DebugPrintHistory: make([]interface{}, 0, 3),
 	}
+
+	// 方法区
+	ma, err := NewMethodArea(vm, classPaths)
+	if nil != err {
+		return nil, fmt.Errorf("unabled to create method area: %w", err)
+	}
+	vm.MethodArea = ma
 
 	// 执行引擎
 	vm.ExecutionEngine = NewInterpretedExecutionEngine(vm)

@@ -13,6 +13,8 @@ import (
 
 // 方法区
 type MethodArea struct {
+	Jvm *MiniJvm
+
 	// 类路径
 	ClassPaths []string
 
@@ -21,12 +23,13 @@ type MethodArea struct {
 	ClassMap map[string]*class.DefFile
 }
 
-func NewMethodArea(classpaths []string) (*MethodArea, error) {
+func NewMethodArea(jvm *MiniJvm, classpaths []string) (*MethodArea, error) {
 	if nil == classpaths || len(classpaths) == 0 {
 		return nil, fmt.Errorf("invalid classpath: %v", classpaths)
 	}
 
 	return &MethodArea{
+		Jvm: jvm,
 		ClassPaths: classpaths,
 		ClassMap: make(map[string]*class.DefFile),
 	}, nil
@@ -68,8 +71,15 @@ func (m *MethodArea) LoadClass(fullyQualifiedName string) (*class.DefFile, error
 		}
 	}
 
-
 	m.ClassMap[fullyQualifiedName] = defFile
+
+	// 执行<clinit>方法
+	err = m.Jvm.ExecutionEngine.ExecuteWithDescriptor(defFile, "<clinit>", "()V")
+	if nil != err && "failed to find method" == err.Error() {
+		return nil, fmt.Errorf("failed to execute <clinit> for class '%s':%w", fullyQualifiedName, err)
+	}
+
+
 	return defFile, nil
 }
 

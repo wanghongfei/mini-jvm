@@ -21,13 +21,6 @@ type Reference struct {
 	Array *Array
 }
 
-type Array struct {
-	// 元素类型
-	Type byte
-
-	// 数据
-	Data []interface{}
-}
 
 type Object struct {
 	// class定义
@@ -38,11 +31,6 @@ type Object struct {
 }
 
 
-type ObjectField struct {
-	// 实例值
-	FieldValue interface{}
-	FieldType string
-}
 
 // 创建对象;
 func NewObject(def *DefFile, cl Loader) (*Reference, error) {
@@ -147,6 +135,44 @@ func ParseMethodDescriptor(descriptor string) ([]string, string) {
 	return argList, retDesc
 }
 
+type ObjectField struct {
+	// 实例值
+	FieldValue interface{}
+	FieldType string
+}
+
+func NewObjectField(val interface{}) *ObjectField {
+	f := new(ObjectField)
+	f.FieldValue = val
+
+	switch val.(type) {
+	case int:
+		f.FieldType = "int"
+
+	case *Reference:
+		f.FieldType = "ref"
+
+	case *Array:
+		f.FieldType = "arr"
+
+	default:
+		f.FieldType = "unknown"
+	}
+
+	return f
+}
+
+func (f *ObjectField) String() string {
+	return fmt.Sprintf("%v", f.FieldValue)
+}
+
+type Array struct {
+	// 元素类型
+	Type byte
+
+	// 数据
+	Data []interface{}
+}
 
 func NewArray(maxLen int, atype byte) (*Reference, error) {
 	if atype < 4 || atype > 11 {
