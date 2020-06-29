@@ -18,14 +18,14 @@ type InterpretedExecutionEngine struct {
 }
 
 func (i *InterpretedExecutionEngine) Execute(def *class.DefFile, methodName string) error {
-	return i.execute(def, methodName, "([Ljava/lang/String;)V", nil)
+	return i.ExecuteWithFrame(def, methodName, "([Ljava/lang/String;)V", nil)
 }
 
 func (i *InterpretedExecutionEngine) ExecuteWithDescriptor(def *class.DefFile, methodName, descriptor string) error {
-	return i.execute(def, methodName, descriptor, nil)
+	return i.ExecuteWithFrame(def, methodName, descriptor, nil)
 }
 
-func (i *InterpretedExecutionEngine) execute(def *class.DefFile, methodName string, methodDescriptor string, lastFrame *MethodStackFrame) error {
+func (i *InterpretedExecutionEngine) ExecuteWithFrame(def *class.DefFile, methodName string, methodDescriptor string, lastFrame *MethodStackFrame) error {
 	// 查找方法
 	method, err := i.findMethod(def, methodName, methodDescriptor)
 	if nil != err {
@@ -281,7 +281,7 @@ func (i *InterpretedExecutionEngine) executeInFrame(def *class.DefFile, codeAttr
 
 		case bcode.Bipush:
 			// 将单字节的常量值(-128~127)推送至栈顶
-			num := codeAttr.Code[frame.pc + 1]
+			num := int8(codeAttr.Code[frame.pc + 1])
 			frame.opStack.Push(int(num))
 			frame.pc++
 
@@ -671,7 +671,7 @@ func (i *InterpretedExecutionEngine) invokeStatic(def *class.DefFile, frame *Met
 	}
 
 	// 调用
-	return i.execute(targetDef, methodName, descriptor, frame)
+	return i.ExecuteWithFrame(targetDef, methodName, descriptor, frame)
 }
 
 func (i *InterpretedExecutionEngine) invokeSpecial(def *class.DefFile, frame *MethodStackFrame, codeAttr *class.CodeAttr) error {
@@ -710,7 +710,7 @@ func (i *InterpretedExecutionEngine) invokeSpecial(def *class.DefFile, frame *Me
 	}
 
 	// 调用
-	return i.execute(targetDef, methodName, descriptor, frame)
+	return i.ExecuteWithFrame(targetDef, methodName, descriptor, frame)
 }
 
 func (i *InterpretedExecutionEngine) invokeVirtual(def *class.DefFile, frame *MethodStackFrame, codeAttr *class.CodeAttr) error {
@@ -752,7 +752,7 @@ func (i *InterpretedExecutionEngine) invokeVirtual(def *class.DefFile, frame *Me
 
 
 	// 调用
-	return i.execute(targetDef, methodName, descriptor, frame)
+	return i.ExecuteWithFrame(targetDef, methodName, descriptor, frame)
 }
 
 func (i *InterpretedExecutionEngine) invokeInterface(def *class.DefFile, frame *MethodStackFrame, codeAttr *class.CodeAttr) error {
@@ -790,7 +790,7 @@ func (i *InterpretedExecutionEngine) invokeInterface(def *class.DefFile, frame *
 
 	// 出栈取出对象引用
 	ref, _ := frame.opStack.GetUntilObject()
-	return i.execute(ref.Object.DefFile, targetMethodName, targetDescriptor, frame)
+	return i.ExecuteWithFrame(ref.Object.DefFile, targetMethodName, targetDescriptor, frame)
 }
 
 // 解释athrow指令

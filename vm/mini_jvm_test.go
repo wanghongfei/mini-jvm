@@ -220,3 +220,16 @@ func TestStaticField(t *testing.T) {
 		t.FailNow()
 	}
 }
+
+func TestThread(t *testing.T) {
+	miniJvm, err := NewMiniJvm("com.fh.thread.ThreadTest", []string{"../testclass/"})
+	if nil != err {
+		t.Fatal(err)
+	}
+
+	err = miniJvm.Start()
+	if nil != err {
+		t.Fatal(err)
+	}
+
+}

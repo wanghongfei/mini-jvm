@@ -28,6 +28,8 @@ type ExecutionEngine interface {
 	Execute(file *class.DefFile, methodName string) error
 
 	ExecuteWithDescriptor(file *class.DefFile, methodName string, descriptor string) error
+
+	ExecuteWithFrame(file *class.DefFile, methodName string, descriptor string, frame *MethodStackFrame) error
 }
 
 func NewMiniJvm(mainClass string, classPaths[] string) (*MiniJvm, error) {
@@ -60,6 +62,8 @@ func NewMiniJvm(mainClass string, classPaths[] string) (*MiniJvm, error) {
 	nativeMethodTable.RegisterMethod("printInt", "(I)V", PrintInt)
 	nativeMethodTable.RegisterMethod("printInt2", "(II)V", PrintInt2)
 	nativeMethodTable.RegisterMethod("printChar", "(C)V", PrintChar)
+	nativeMethodTable.RegisterMethod("executeInThread", "(Ljava/lang/Runnable;)V", ExecuteInThread)
+	nativeMethodTable.RegisterMethod("threadSleep", "(I)V", ThreadSleep)
 
 	return vm, nil
 }

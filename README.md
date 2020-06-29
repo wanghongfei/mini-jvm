@@ -4,7 +4,19 @@
 
 Mini-JVM首先会从`classpath`中加载主类的class文件，然后找到main方法的字节码解释执行；执行过程中如果遇到新的类符号引用，则会通过全限定性名再从`classpath`中加载新的类文件，以此类推；
 
-当前仅支持整数加法、循环、控制台输出、简单对象创建(不会调用构造方法)、对象字段读写、静态字段读写、部分继承特性、形参全部为int类型的方法调用、方法重载、方法重写、接口方法调用；其他特性还未实现，如完整的异常支持、JDK类库加载、线程等等；
+当前支持的特性有：
+
+- int加法
+- 循环结构
+- 控制台输出
+- 简单对象创建
+- 对象字段读写、静态字段读写
+- 方法重载、方法重写、接口方法调用、形参全部为int类型的static方法调用
+- native方法调用(本地方法表)
+- 部分继承特性(字段继承、方法继承)
+- 非标准库Thread类的线程支持
+
+
 
   ![路线图](https://s1.ax1x.com/2020/06/11/tHM4OJ.png)
 
@@ -372,3 +384,65 @@ public class IfTest {
   
 
 int数组的读写： `testclass/com/fh/ArrayTest.java`
+
+
+
+"线程"支持：`testclass/com/fh/thread/ThreadTest.java`
+
+```java
+package com.fh.thread;
+
+
+public class ThreadTest {
+    public static void main(String[] args) {
+        executeInThread(new MyTask());
+
+        print(-100);
+        threadSleep(4);
+        print(-200);
+    }
+
+    public static class MyTask implements Runnable {
+        public void run() {
+            for (int ix = 0; ix < 10; ix++) {
+                print(ix);
+            }
+        }
+
+        public native void print(int num);
+    }
+
+    /**
+     * 在新的线程中执行task
+     */
+    public static native void executeInThread(Runnable task);
+
+    /**
+     * 休眠当前线程
+     */
+    public static native void threadSleep(int second);
+    public static native void print(int num);
+}
+
+```
+
+输出：
+
+```shell
+=== RUN   TestThread
+-100
+0
+1
+2
+3
+4
+5
+6
+7
+8
+9
+-200
+--- PASS: TestThread (6.90s)
+PASS
+```
+

@@ -1,6 +1,10 @@
 package vm
 
-import "fmt"
+import (
+	"fmt"
+	"github.com/wanghongfei/mini-jvm/vm/class"
+	"time"
+)
 
 func PrintInt(args ...interface{}) interface{} {
 	fmt.Println(args[1])
@@ -21,6 +25,41 @@ func PrintChar(args ...interface{}) interface{} {
 	return true
 }
 
-//func ExecuteInThread(args ...interface{}) interface{} {
-//
-//}
+// 当前协程sleep指定秒数
+func ThreadSleep(args ...interface{}) interface{} {
+	seconds := args[1].(int)
+	time.Sleep(time.Duration(seconds) * time.Second)
+
+	return true
+}
+
+// 在新的协程中执行字节码
+func ExecuteInThread(args ...interface{}) interface{} {
+	// 第一个参数为jvm指针
+	jvm := args[0].(*MiniJvm)
+	// 第二个参数是实现了Runnalbe接口的对象引用
+	objRef := args[1].(*class.Reference)
+	// 对象的class定义
+	targetClassDef := objRef.Object.DefFile
+
+
+	// 创建栈帧
+	// 把objRef压进去
+	opStack := NewOpStack(1)
+	opStack.Push(objRef)
+	frame := &MethodStackFrame{
+		localVariablesTable: nil,
+		opStack:             opStack,
+		pc:                  0,
+	}
+
+	go func() {
+		err := jvm.ExecutionEngine.ExecuteWithFrame(targetClassDef, "run", "()V", frame)
+		if nil != err {
+			fmt.Printf("failed to execute native function 'ExecuteInThread': %v\n", err)
+		}
+	}()
+
+
+	return true
+}

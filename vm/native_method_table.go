@@ -25,10 +25,37 @@ type NativeMethodInfo struct {
 func (info *NativeMethodInfo) ParseArgCount() int {
 	argAndRetDesciptor := strings.Split(info.Descriptor, ")")
 	argDescriptor := argAndRetDesciptor[0][1:]
+	//
+	//return len(argDescriptor)
 
-	return len(argDescriptor)
 
-	// return strings.Count(argDescriptor, ",") + 1
+	// 遍历模式
+	// 0: 正常模式
+	// 1: L模式(解析对象全名, Lxx/xxx/xx;)
+	mode := 0
+	sum := 0
+	for _, ch := range argDescriptor {
+		// 解析出一个class类型
+		if 1 == mode {
+			// 处于class解析状态
+			if ';' == ch {
+				sum++
+				mode = 0
+			}
+
+			continue
+		}
+
+		if 'L' == ch {
+			mode = 1
+			continue
+		}
+
+		sum++
+	}
+
+	return sum
+
 }
 
 // 本地方法表
