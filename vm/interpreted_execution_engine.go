@@ -44,18 +44,22 @@ func (i *InterpretedExecutionEngine) execute(def *class.DefFile, methodName stri
 		}
 
 		// 从操作数栈取出argCount个参数
+		argCount += 1
 		args := make([]interface{}, 0, argCount)
 		for ix := 0; ix < argCount; ix++ {
 			arg, _ := lastFrame.opStack.Pop()
 			args = append(args, arg)
 		}
 
+		// 将jvm指针放到参数里,给native方法访问jvm的能力
+		args[argCount - 1] = i.miniJvm
+
 		// 因为出栈顺序跟实际参数顺序是相反的, 所以需要反转数组
 		for ix := 0; ix < argCount / 2; ix++ {
 			args[ix], args[argCount - 1 - ix] = args[argCount - 1 - ix], args[ix]
 		}
 
-		i.miniJvm.DebugPrintHistory = append(i.miniJvm.DebugPrintHistory, args...)
+		i.miniJvm.DebugPrintHistory = append(i.miniJvm.DebugPrintHistory, args[1:]...)
 
 		// 调用go函数
 		nativeFunc(args...)

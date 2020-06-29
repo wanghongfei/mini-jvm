@@ -4,6 +4,8 @@ import (
 	"strings"
 )
 
+// JVM的本地方法, 即go函数;
+// 参数args[0]固定为MiniJVM的指针
 type NativeFunction func(args ...interface{}) interface{}
 
 type NativeMethodInfo struct {
