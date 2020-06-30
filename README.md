@@ -9,8 +9,8 @@ Mini-JVM首先会从`classpath`中加载主类的class文件，然后找到main�
 当前支持的特性有：
 
 - int加法
-- 循环结构
-- 控制台输出
+- 条件判断、for循环
+- 控制台打印
 - 简单对象创建
 - 对象字段读写、静态字段读写
 - 方法重载、方法重写、接口方法调用、形参全部为int类型的static方法调用
@@ -20,7 +20,7 @@ Mini-JVM首先会从`classpath`中加载主类的class文件，然后找到main�
 
 
 
-  ![路线图](https://s1.ax1x.com/2020/06/11/tHM4OJ.png)
+  ![路线图](https://s1.ax1x.com/2020/06/30/NIpjTU.png)
 
 
 
