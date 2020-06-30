@@ -96,6 +96,16 @@ func (s *OpStack) GetTopObject() (*class.Reference, bool) {
 	return v, ok
 }
 
+// 跳过skipCount个元素后获取栈元素
+func (s *OpStack) GetObjectSkip(skipCount int) (*class.Reference, bool) {
+	v, ok := s.elems[s.topIndex - skipCount].(*class.Reference)
+	if ok {
+		return v, true
+	}
+
+	return nil, false
+}
+
 func (s *OpStack) GetUntilObject() (*class.Reference, bool) {
 
 	index := s.topIndex

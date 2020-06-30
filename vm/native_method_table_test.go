@@ -1,6 +1,9 @@
 package vm
 
-import "testing"
+import (
+	"github.com/wanghongfei/mini-jvm/vm/class"
+	"testing"
+)
 
 func TestNativeMethodInfo_ParseArgCount(t *testing.T) {
 	info := &NativeMethodInfo{
@@ -8,7 +11,7 @@ func TestNativeMethodInfo_ParseArgCount(t *testing.T) {
 		Descriptor: "(II)V",
 		EntryFunc:  nil,
 	}
-	if 2 != info.ParseArgCount() {
+	if 2 != class.ParseArgCount(info.Descriptor) {
 		t.FailNow()
 	}
 
@@ -17,7 +20,7 @@ func TestNativeMethodInfo_ParseArgCount(t *testing.T) {
 		Descriptor: "(I)V",
 		EntryFunc:  nil,
 	}
-	if 1 != info.ParseArgCount() {
+	if 1 != class.ParseArgCount(info.Descriptor) {
 		t.FailNow()
 	}
 
@@ -26,7 +29,7 @@ func TestNativeMethodInfo_ParseArgCount(t *testing.T) {
 		Descriptor: "()V",
 		EntryFunc:  nil,
 	}
-	if 0 != info.ParseArgCount() {
+	if 0 != class.ParseArgCount(info.Descriptor) {
 		t.FailNow()
 	}
 
@@ -35,7 +38,7 @@ func TestNativeMethodInfo_ParseArgCount(t *testing.T) {
 		Descriptor: "(Ljava/lang/Runnable;)V",
 		EntryFunc:  nil,
 	}
-	if 1 != info.ParseArgCount() {
+	if 1 != class.ParseArgCount(info.Descriptor) {
 		t.FailNow()
 	}
 
@@ -44,7 +47,7 @@ func TestNativeMethodInfo_ParseArgCount(t *testing.T) {
 		Descriptor: "(Ljava/lang/Runnable;II)V",
 		EntryFunc:  nil,
 	}
-	if 3 != info.ParseArgCount() {
+	if 3 != class.ParseArgCount(info.Descriptor) {
 		t.FailNow()
 	}
 
@@ -53,7 +56,7 @@ func TestNativeMethodInfo_ParseArgCount(t *testing.T) {
 		Descriptor: "(CCLjava/lang/Runnable;II)V",
 		EntryFunc:  nil,
 	}
-	if 5 != info.ParseArgCount() {
+	if 5 != class.ParseArgCount(info.Descriptor) {
 		t.FailNow()
 	}
 }

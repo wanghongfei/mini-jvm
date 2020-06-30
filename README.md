@@ -4,6 +4,8 @@
 
 Mini-JVM首先会从`classpath`中加载主类的class文件，然后找到main方法的字节码解释执行；执行过程中如果遇到新的类符号引用，则会通过全限定性名再从`classpath`中加载新的类文件，以此类推；
 
+控制台输出、多线程功能通过自定义的标准库"mini-lib"中的`Printer`和`MiniThread`实现，没有使用JDK的标准库`Thread`，可以执行`compile-minilib.sh`编译mini-lib源文件；
+
 当前支持的特性有：
 
 - int加法
@@ -33,8 +35,16 @@ go build -o mini-jvm
 运行：
 
 ```shell
-./mini-jvm [主类全限定性名] [classpath(仅支持.class文件所在目录,不支持jar)]
+./mini-jvm [主类全限定性名] [classpath(支持.class文件所在目录或jar所在目录)]
 ```
+
+由于Mini-JVM的控制台输出和线程用的是私有类而JDK中`rt.jar`中的类，所以需要在classpath中指定`mini-lib`所在路径，例如：
+
+```shell
+./mini-jvm x.y.x.XXXMain mini-lib/  classpath1/ classpath2/ ... ...
+```
+
+
 
 
 
@@ -142,7 +152,7 @@ const (
 
   
 
-著名的汉诺塔问题(`testclass/com/fh/Hanoi.java`)：
+著名的汉诺塔问题(`testcase/src/com/fh/Hanoi.java`)：
 
 ```java
 package com.fh;
@@ -180,14 +190,68 @@ public class Hanoi {
 ```
 
 ```shell
-./mini-jvm Hanoi ../testclass/  # 输出127
+./mini-jvm cn.fh.Hanoi(主类名) testcase/classes/ mini-lib/classes  # 输出127
 ```
 
 
 
+"线程"支持：`testcase/src/com/fh/thread/ThreadTest.java`
+
+```java
+package com.fh.thread;
+
+import cn.minijvm.concurrency.MiniThread;
+import cn.minijvm.io.Printer;
+
+public class ThreadTest {
+    public static void main(String[] args) {
+        // 创建协程支持的线程
+        MiniThread th = new MiniThread();
+        Printer.print(-100);
+
+        // 启动并执行线程
+        th.start(new MyTask());
+        // 当前线程休眠, 防止刚启动的线程还没来得及运行
+        MiniThread.sleepCurrentThread(4);
+
+        Printer.print(-200);
+    }
+
+    public static class MyTask implements Runnable {
+        public void run() {
+            for (int ix = 0; ix < 10; ix++) {
+                Printer.print(ix);
+            }
+        }
+    }
+
+}
+
+```
+
+输出：
+
+```shell
+=== RUN   TestThread
+-100
+0
+1
+2
+3
+4
+5
+6
+7
+8
+9
+-200
+--- PASS: TestThread (6.90s)
+PASS
+```
 
 
-计算从1加到100的值(`testclass/com/fh/ForLoopPrintTest.java`)：
+
+计算从1加到100的值(`testcase/src/com/fh/ForLoopPrintTest.java`)：
 
 ```java
 package com.fh;
@@ -209,13 +273,11 @@ public class ForLoopPrintTest {
 
 ```
 
-```shell
-./mini-jvm ForLoopPrintTest ../testclass/
-```
 
-  
 
-递归调用方法(`testclass/com/fh/RecursionTest`)：
+
+
+递归调用方法(`testcase/src/com/fh/RecursionTest`)：
 
 ```java
 package com.fh;
@@ -240,13 +302,11 @@ public class RecursionTest {
 }
 ```
 
-```
-./mini-jvm RecursionTest ../testclass/
-```
+
 
   
 
-简单对象的创建/访问(`testclass/com/fh/NewSimpleObjectTest.java`)：
+简单对象的创建/访问(`testcase/src/com/fh/NewSimpleObjectTest.java`)：
 
 ```java
 package com.fh;
@@ -273,13 +333,9 @@ public class NewSimpleObjectTest {
 
 ```
 
-```
-./mini-jvm NewSimpleObjectTest ../testclass/
-```
-
    
 
-方法重载(`testclass/com/fh/MethodReloadTest.java`)：
+方法重载(`testcase/src/com/fh/MethodReloadTest.java`)：
 
 ```java
 package com.fh;
@@ -302,13 +358,11 @@ public class MethodReloadTest {
 
 ```
 
-```
-./mini-jvm MethodReloadTest ../testclass/
-```
+
 
   
 
-方法重写(`testclass/com/ch/ClassExtendTest.java`)：
+方法重写(`testcase/src/com/ch/ClassExtendTest.java`)：
 
 ```java
 package com.fh;
@@ -326,9 +380,7 @@ public class ClassExtendTest {
 }
 ```
 
-```
-./mini-jvm ClassExtendTest ../testclass/
-```
+
 
 
 
@@ -383,66 +435,7 @@ public class IfTest {
 
   
 
-int数组的读写： `testclass/com/fh/ArrayTest.java`
+int数组的读写： `testcase/src/com/fh/ArrayTest.java`
 
 
-
-"线程"支持：`testclass/com/fh/thread/ThreadTest.java`
-
-```java
-package com.fh.thread;
-
-
-public class ThreadTest {
-    public static void main(String[] args) {
-        executeInThread(new MyTask());
-
-        print(-100);
-        threadSleep(4);
-        print(-200);
-    }
-
-    public static class MyTask implements Runnable {
-        public void run() {
-            for (int ix = 0; ix < 10; ix++) {
-                print(ix);
-            }
-        }
-
-        public native void print(int num);
-    }
-
-    /**
-     * 在新的线程中执行task
-     */
-    public static native void executeInThread(Runnable task);
-
-    /**
-     * 休眠当前线程
-     */
-    public static native void threadSleep(int second);
-    public static native void print(int num);
-}
-
-```
-
-输出：
-
-```shell
-=== RUN   TestThread
--100
-0
-1
-2
-3
-4
-5
-6
-7
-8
-9
--200
---- PASS: TestThread (6.90s)
-PASS
-```
 

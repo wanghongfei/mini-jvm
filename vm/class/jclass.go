@@ -43,9 +43,22 @@ type DefFile struct {
 	AttrCount uint16
 	Attrs []interface{}
 
+
+	// 类全名
+	FullClassName string
+
 	// 保存static字段
 	// key: 字段名
 	ParsedStaticFields map[string]*ObjectField
+}
+
+func (c *DefFile) ExtractFullClassName() string {
+	classInfo := c.ConstPool[c.ThisClass].(*ClassInfoConstInfo)
+	return c.ConstPool[classInfo.FullClassNameIndex].(*Utf8InfoConst).String()
+}
+
+func (c *DefFile) String() string {
+	return c.ExtractFullClassName()
 }
 
 
@@ -200,6 +213,8 @@ func LoadClassBuf(buf []byte) (*DefFile, error) {
 	if nil != err {
 		return nil, fmt.Errorf("failed to allocate static fields: %w", err)
 	}
+
+	defFile.FullClassName = defFile.ExtractFullClassName()
 
 	return defFile, nil
 }

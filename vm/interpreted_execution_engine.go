@@ -36,8 +36,8 @@ func (i *InterpretedExecutionEngine) ExecuteWithFrame(def *class.DefFile, method
 	flagMap := accflag.ParseAccFlags(method.AccessFlags)
 	// 是native方法
 	if _, ok := flagMap[accflag.Native]; ok {
-		// 查本地方发表
-		nativeFunc, argCount := i.miniJvm.NativeMethodTable.FindMethod(methodName, methodDescriptor)
+		// 查本地方法表
+		nativeFunc, argCount := i.miniJvm.NativeMethodTable.FindMethod(def.FullClassName, methodName, methodDescriptor)
 		if nil == nativeFunc {
 			// 该本地方法尚未被支持
 			return fmt.Errorf("unsupported native method '%s'", method)
@@ -723,11 +723,6 @@ func (i *InterpretedExecutionEngine) invokeVirtual(def *class.DefFile, frame *Me
 		return fmt.Errorf("failed to read method_ref_cp_index: %w", err)
 	}
 
-	// 找到操作数栈中的第一个引用
-	// 此引用即为实际类型
-	targetObjRef, _ := frame.opStack.GetUntilObject()
-	targetDef := targetObjRef.Object.DefFile
-
 	// 取出引用的方法
 	methodRef := def.ConstPool[methodRefCpIndex].(*class.MethodRefConstInfo)
 	// 取出方法名
@@ -735,6 +730,15 @@ func (i *InterpretedExecutionEngine) invokeVirtual(def *class.DefFile, frame *Me
 	methodName := def.ConstPool[nameAndType.NameIndex].(*class.Utf8InfoConst).String()
 	// 描述符
 	descriptor := def.ConstPool[nameAndType.DescIndex].(*class.Utf8InfoConst).String()
+
+	// 计算参数的个数
+	argCount := class.ParseArgCount(descriptor)
+
+	// 找到操作数栈中的引用, 此引用即为实际类型
+	// !!!如果有目标方法有参数, 则栈顶为参数而不是方法所在的实际对象，切记!!!
+	targetObjRef, _ := frame.opStack.GetObjectSkip(argCount)
+	targetDef := targetObjRef.Object.DefFile
+
 
 
 	//// 取出方法所在的class
@@ -970,6 +974,8 @@ func (i *InterpretedExecutionEngine) findCodeAttr(method *class.MethodInfo) (*cl
 func (i *InterpretedExecutionEngine) findMethod(def *class.DefFile, methodName string, methodDescriptor string) (*class.MethodInfo, error) {
 	currentClassDef := def
 	for {
+		//className := currentClassDef.ExtractFullClassName()
+		//fmt.Println(className)
 		for _, method := range currentClassDef.Methods {
 			name := currentClassDef.ConstPool[method.NameIndex].(*class.Utf8InfoConst).String()
 			descriptor := currentClassDef.ConstPool[method.DescriptorIndex].(*class.Utf8InfoConst).String()

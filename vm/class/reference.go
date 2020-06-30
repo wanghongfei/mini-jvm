@@ -135,6 +135,43 @@ func ParseMethodDescriptor(descriptor string) ([]string, string) {
 	return argList, retDesc
 }
 
+// 解析方法描述符, 返回方法参数的数量
+func ParseArgCount(descriptor string) int {
+	argAndRetDesciptor := strings.Split(descriptor, ")")
+	argDescriptor := argAndRetDesciptor[0][1:]
+	//
+	//return len(argDescriptor)
+
+
+	// 遍历模式
+	// 0: 正常模式
+	// 1: L模式(解析对象全名, Lxx/xxx/xx;)
+	mode := 0
+	sum := 0
+	for _, ch := range argDescriptor {
+		// 解析出一个class类型
+		if 1 == mode {
+			// 处于class解析状态
+			if ';' == ch {
+				sum++
+				mode = 0
+			}
+
+			continue
+		}
+
+		if 'L' == ch {
+			mode = 1
+			continue
+		}
+
+		sum++
+	}
+
+	return sum
+
+}
+
 type ObjectField struct {
 	// 实例值
 	FieldValue interface{}

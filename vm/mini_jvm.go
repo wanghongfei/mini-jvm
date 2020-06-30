@@ -58,12 +58,12 @@ func NewMiniJvm(mainClass string, classPaths[] string) (*MiniJvm, error) {
 	nativeMethodTable := NewNativeMethodTable()
 	vm.NativeMethodTable = nativeMethodTable
 	// 注册本地方法
-	nativeMethodTable.RegisterMethod("print", "(I)V", PrintInt)
-	nativeMethodTable.RegisterMethod("printInt", "(I)V", PrintInt)
-	nativeMethodTable.RegisterMethod("printInt2", "(II)V", PrintInt2)
-	nativeMethodTable.RegisterMethod("printChar", "(C)V", PrintChar)
-	nativeMethodTable.RegisterMethod("executeInThread", "(Ljava/lang/Runnable;)V", ExecuteInThread)
-	nativeMethodTable.RegisterMethod("threadSleep", "(I)V", ThreadSleep)
+	nativeMethodTable.RegisterMethod("cn.minijvm.io.Printer", "print", "(I)V", PrintInt)
+	nativeMethodTable.RegisterMethod("cn.minijvm.io.Printer", "printInt", "(I)V", PrintInt)
+	nativeMethodTable.RegisterMethod("cn.minijvm.io.Printer", "printInt2", "(II)V", PrintInt2)
+	nativeMethodTable.RegisterMethod("cn.minijvm.io.Printer", "printChar", "(C)V", PrintChar)
+	nativeMethodTable.RegisterMethod("cn.minijvm.concurrency.MiniThread", "start", "(Ljava/lang/Runnable;)V", ExecuteInThread)
+	nativeMethodTable.RegisterMethod("cn.minijvm.concurrency.MiniThread", "sleepCurrentThread", "(I)V", ThreadSleep)
 
 	return vm, nil
 }

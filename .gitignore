@@ -6,3 +6,5 @@ logs/
 bin/
 out/
 go.sum
+
+mini-lib-class

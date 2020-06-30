@@ -6,7 +6,7 @@ import (
 )
 
 func TestHelloNative(t *testing.T) {
-	miniJvm, err := NewMiniJvm("com.fh.ForLoopPrintTest", []string{"../testclass/"})
+	miniJvm, err := NewMiniJvm("com.fh.ForLoopPrintTest", []string{"../testcase/classes", "../mini-lib/classes"})
 	if nil != err {
 		t.Fatal(err)
 	}
@@ -23,7 +23,7 @@ func TestHelloNative(t *testing.T) {
 }
 
 func TestHelloClass(t *testing.T) {
-	miniJvm, err := NewMiniJvm("com.fh.NewSimpleObjectTest", []string{"../testclass/"})
+	miniJvm, err := NewMiniJvm("com.fh.NewSimpleObjectTest", []string{"../testcase/classes", "../mini-lib/classes"})
 	if nil != err {
 		t.Fatal(err)
 	}
@@ -40,7 +40,7 @@ func TestHelloClass(t *testing.T) {
 }
 
 func TestHelloMethod(t *testing.T) {
-	miniJvm, err := NewMiniJvm("com.fh.MethodReloadTest", []string{"../testclass/"})
+	miniJvm, err := NewMiniJvm("com.fh.MethodReloadTest", []string{"../testcase/classes", "../mini-lib/classes"})
 	if nil != err {
 		t.Fatal(err)
 	}
@@ -57,7 +57,7 @@ func TestHelloMethod(t *testing.T) {
 }
 
 func TestClassExtend(t *testing.T) {
-	miniJvm, err := NewMiniJvm("com.fh.ClassExtendTest", []string{"../testclass/"})
+	miniJvm, err := NewMiniJvm("com.fh.ClassExtendTest", []string{"../testcase/classes", "../mini-lib/classes"})
 	if nil != err {
 		t.Fatal(err)
 	}
@@ -77,7 +77,7 @@ func TestClassExtend(t *testing.T) {
 }
 
 func TestRecursion(t *testing.T) {
-	miniJvm, err := NewMiniJvm("com.fh.RecursionTest", []string{"../testclass/"})
+	miniJvm, err := NewMiniJvm("com.fh.RecursionTest", []string{"../testcase/classes", "../mini-lib/classes"})
 	if nil != err {
 		t.Fatal(err)
 	}
@@ -97,7 +97,7 @@ func TestRecursion(t *testing.T) {
 }
 
 func TestIfTest(t *testing.T) {
-	miniJvm, err := NewMiniJvm("com.fh.IfTest", []string{"../testclass/"})
+	miniJvm, err := NewMiniJvm("com.fh.IfTest", []string{"../testcase/classes", "../mini-lib/classes"})
 	if nil != err {
 		t.Fatal(err)
 	}
@@ -117,7 +117,7 @@ func TestIfTest(t *testing.T) {
 }
 
 func TestArray(t *testing.T) {
-	miniJvm, err := NewMiniJvm("com.fh.ArrayTest", []string{"../testclass/"})
+	miniJvm, err := NewMiniJvm("com.fh.ArrayTest", []string{"../testcase/classes", "../mini-lib/classes"})
 	if nil != err {
 		t.Fatal(err)
 	}
@@ -150,7 +150,7 @@ func TestArray(t *testing.T) {
 }
 
 func TestInterface(t *testing.T) {
-	miniJvm, err := NewMiniJvm("com.fh.InterfaceTest", []string{"../testclass/"})
+	miniJvm, err := NewMiniJvm("com.fh.InterfaceTest", []string{"../testcase/classes", "../mini-lib/classes"})
 	if nil != err {
 		t.Fatal(err)
 	}
@@ -173,7 +173,7 @@ func TestInterface(t *testing.T) {
 }
 
 func TestException(t *testing.T) {
-	miniJvm, err := NewMiniJvm("com.fh.ExceptionTest", []string{"../testclass/", "/Library/Java/JavaVirtualMachines/jdk1.8.0_181.jdk/Contents/Home/jre/lib/rt.jar"})
+	miniJvm, err := NewMiniJvm("com.fh.ExceptionTest", []string{"../testcase/classes", "../mini-lib/classes", "/Library/Java/JavaVirtualMachines/jdk1.8.0_181.jdk/Contents/Home/jre/lib/rt.jar"})
 	if nil != err {
 		t.Fatal(err)
 	}
@@ -186,7 +186,7 @@ func TestException(t *testing.T) {
 
 
 func TestHanoi(t *testing.T) {
-	miniJvm, err := NewMiniJvm("com.fh.Hanoi", []string{"../testclass/"})
+	miniJvm, err := NewMiniJvm("com.fh.Hanoi", []string{"../testcase/classes", "../mini-lib/classes"})
 	if nil != err {
 		t.Fatal(err)
 	}
@@ -202,7 +202,7 @@ func TestHanoi(t *testing.T) {
 }
 
 func TestStaticField(t *testing.T) {
-	miniJvm, err := NewMiniJvm("com.fh.StaticFieldTest", []string{"../testclass/"})
+	miniJvm, err := NewMiniJvm("com.fh.StaticFieldTest", []string{"../testcase/classes", "../mini-lib/classes"})
 	if nil != err {
 		t.Fatal(err)
 	}
@@ -222,7 +222,7 @@ func TestStaticField(t *testing.T) {
 }
 
 func TestThread(t *testing.T) {
-	miniJvm, err := NewMiniJvm("com.fh.thread.ThreadTest", []string{"../testclass/"})
+	miniJvm, err := NewMiniJvm("com.fh.thread.ThreadTest", []string{"../testcase/classes", "../mini-lib/classes"})
 	if nil != err {
 		t.Fatal(err)
 	}
