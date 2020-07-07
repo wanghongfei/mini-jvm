@@ -105,9 +105,9 @@ func (i *InterpretedExecutionEngine) ExecuteWithFrame(def *class.DefFile, method
 		// 按参数数量出栈, 取出参数
 		for _, arg := range argDespList {
 			// 是int/char参数
-			if "I" == arg || "C" == arg {
+			if "I" == arg || "C" == arg || "Ljava/lang/String" == arg {
 				// 从上一个栈帧中出栈, 保存到新栈帧的localVarTable中
-				op, _ := lastFrame.opStack.PopInt()
+				op, _ := lastFrame.opStack.Pop()
 				argList = append(argList, op)
 
 				// frame.localVariablesTable[ix + localVarStartIndexOffset] = op
@@ -579,10 +579,9 @@ func (i *InterpretedExecutionEngine) executeInFrame(def *class.DefFile, codeAttr
 			fieldName := def.ConstPool[nameAndType.NameIndex].(*class.Utf8InfoConst).String()
 
 			// 赋值
-			val, _ := frame.opStack.PopInt()
+			val, _ := frame.opStack.Pop()
 			ref, _ := frame.opStack.PopReference()
 			ref.Object.ObjectFields[fieldName].FieldValue = val
-			// thisObj.ObjectFields[fieldName].FieldValue, _ = frame.opStack.PopInt()
 
 		case bcode.GetField:
 			// 获取指定对象的实例域, 并将其压入栈顶
@@ -721,7 +720,7 @@ func (i *InterpretedExecutionEngine) invokeSpecial(def *class.DefFile, frame *Me
 		return fmt.Errorf("failed to load class for '%s': %w", targetClassFullName, err)
 	}
 
-	if "<init>" == methodName {
+	if "<init>" == methodName && "java/lang/String" != targetClassFullName {
 		// 忽略构造器
 		// 消耗一个引用
 		frame.opStack.PopReference()

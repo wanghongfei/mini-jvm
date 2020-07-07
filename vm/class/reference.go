@@ -139,9 +139,14 @@ func NewStringObject(val []rune, cl Loader) (*Reference, error) {
 		ObjectFields: make(map[string]*ObjectField),
 	}
 
+	// 给value和hash这两个最重要的字段赋值
 	obj.ObjectFields["value"] = &ObjectField{
 		FieldValue: val,
 		FieldType:  "[]rune",
+	}
+	obj.ObjectFields["hash"] = &ObjectField{
+		FieldValue: 0,
+		FieldType:  "int",
 	}
 
 	return &Reference{
@@ -160,13 +165,42 @@ func ParseMethodDescriptor(descriptor string) ([]string, string) {
 	argDescEndIndex := strings.Index(descriptor, ")")
 	argDesc := descriptor[1:argDescEndIndex]
 
-	// 解析参数列表
+	// 参数列表
 	argList := make([]string, 0, 5)
-	for _, ch := range argDesc {
-		argList = append(argList, string(ch))
-	}
 
+	// 返回类型
 	retDesc := descriptor[argDescEndIndex + 1:]
+
+	// 遍历模式
+	// 0: 正常模式
+	// 1: L模式(解析对象全名, Lxx/xxx/xx;)
+	mode := 0
+	sum := 0
+	classStartIndex := -1
+	for ix, ch := range argDesc {
+		// 解析出一个class类型
+		if 1 == mode {
+			// 处于class解析状态
+			if ';' == ch {
+				sum++
+				mode = 0
+
+				argList = append(argList, argDesc[classStartIndex:ix])
+				classStartIndex = -1
+			}
+
+			continue
+		}
+
+		if 'L' == ch {
+			mode = 1
+			classStartIndex = ix
+			continue
+		}
+
+		argList = append(argList, string(ch))
+		sum++
+	}
 
 	return argList, retDesc
 }
