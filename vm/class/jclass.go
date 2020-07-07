@@ -222,13 +222,14 @@ func LoadClassBuf(buf []byte) (*DefFile, error) {
 
 // 解析常量池
 func readConstPool(bufReader io.Reader, cpCount int) ([]interface{}, error) {
-	cpInfos := make([]interface{}, 1, cpCount)
+	cpInfos := make([]interface{}, 1, cpCount + 1)
 
 	for ix := 0; ix < cpCount; ix++ {
 		// 读取一个常量
 
 		// 读取tag
 		tag, err := utils.ReadInt8(bufReader)
+		// fmt.Printf("#%v, tag = %v\n", ix + 1, tag)
 		if nil != err {
 			return nil, err
 		}
@@ -248,6 +249,40 @@ func readConstPool(bufReader io.Reader, cpCount int) ([]interface{}, error) {
 				return nil, err
 			}
 			cpInfos = append(cpInfos, info)
+
+		case 4:
+			info, err := ReadFloatConst(bufReader, tag)
+			if nil != err {
+				return nil, err
+			}
+			cpInfos = append(cpInfos, info)
+
+
+		case 5:
+			info, err := ReadLongConst(bufReader, tag)
+			if nil != err {
+				return nil, err
+			}
+			cpInfos = append(cpInfos, info)
+
+			// All 8-byte constants take up two entries in the constant_pool table of the class file.
+			// If a CONSTANT_Long_info or CONSTANT_Double_info structure is the item in the constant_pool table at index n,
+			// then the next usable item in the pool is located at index n+2.
+			cpInfos = append(cpInfos, struct{}{}) // 加一个空的元素
+			ix++
+
+		case 6:
+			info, err := ReadDoubleConst(bufReader, tag)
+			if nil != err {
+				return nil, err
+			}
+			cpInfos = append(cpInfos, info)
+
+			// All 8-byte constants take up two entries in the constant_pool table of the class file.
+			// If a CONSTANT_Long_info or CONSTANT_Double_info structure is the item in the constant_pool table at index n,
+			// then the next usable item in the pool is located at index n+2.
+			cpInfos = append(cpInfos, struct{}{}) // 加一个空的元素
+			ix++
 
 		case 7:
 			info, err := ReadClassInfoConst(bufReader, tag)

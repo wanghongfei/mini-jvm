@@ -159,6 +159,7 @@ func ReadUtf8InfoConst(reader io.Reader, tag uint8) (*Utf8InfoConst, error) {
 		return nil, err
 	}
 	cpInfo.Bytes = utf8Buf
+	// fmt.Println(string(utf8Buf))
 
 	return cpInfo, nil
 }
@@ -188,6 +189,74 @@ func ReadInterfaceMethodConst(reader io.Reader, tag uint8) (*InterfaceMethodCons
 		return nil, err
 	}
 	cpInfo.NameAndTypeIndex = nameAndTypeIndex
+
+	return cpInfo, nil
+}
+
+type LongConst struct {
+	Tag uint8
+	HighByte uint32
+	LowByte uint32
+}
+
+func ReadLongConst(reader io.Reader, tag uint8) (*LongConst, error) {
+	cpInfo := new(LongConst)
+	cpInfo.Tag = tag
+
+	high, err := utils.ReadInt32(reader)
+	if nil != err {
+		return nil, err
+	}
+	cpInfo.HighByte = high
+
+	low, err := utils.ReadInt32(reader)
+	if nil != err {
+		return nil, err
+	}
+	cpInfo.LowByte = low
+
+	return cpInfo, nil
+}
+
+type FloatConst struct {
+	Tag uint8
+	Bytes uint32
+}
+
+func ReadFloatConst(reader io.Reader, tag uint8) (*FloatConst, error) {
+	cpInfo := new(FloatConst)
+	cpInfo.Tag = tag
+
+	b, err := utils.ReadInt32(reader)
+	if nil != err {
+		return nil, err
+	}
+	cpInfo.Bytes = b
+
+	return cpInfo, nil
+}
+
+type DoubleConst struct {
+	Tag uint8
+	HighByte uint32
+	LowByte uint32
+}
+
+func ReadDoubleConst(reader io.Reader, tag uint8) (*DoubleConst, error) {
+	cpInfo := new(DoubleConst)
+	cpInfo.Tag = tag
+
+	high, err := utils.ReadInt32(reader)
+	if nil != err {
+		return nil, err
+	}
+	cpInfo.HighByte = high
+
+	low, err := utils.ReadInt32(reader)
+	if nil != err {
+		return nil, err
+	}
+	cpInfo.LowByte = low
 
 	return cpInfo, nil
 }
