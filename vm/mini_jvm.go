@@ -45,7 +45,7 @@ func NewMiniJvm(mainClass string, classPaths[] string) (*MiniJvm, error) {
 	}
 
 	// 方法区
-	ma, err := NewMethodArea(vm, classPaths)
+	ma, err := NewMethodArea(vm, classPaths, nil)
 	if nil != err {
 		return nil, fmt.Errorf("unabled to create method area: %w", err)
 	}
@@ -62,6 +62,7 @@ func NewMiniJvm(mainClass string, classPaths[] string) (*MiniJvm, error) {
 	nativeMethodTable.RegisterMethod("cn.minijvm.io.Printer", "printInt", "(I)V", PrintInt)
 	nativeMethodTable.RegisterMethod("cn.minijvm.io.Printer", "printInt2", "(II)V", PrintInt2)
 	nativeMethodTable.RegisterMethod("cn.minijvm.io.Printer", "printChar", "(C)V", PrintChar)
+	nativeMethodTable.RegisterMethod("cn.minijvm.io.Printer", "printString", "(Ljava/lang/String;)V", PrintString)
 	nativeMethodTable.RegisterMethod("cn.minijvm.concurrency.MiniThread", "start", "(Ljava/lang/Runnable;)V", ExecuteInThread)
 	nativeMethodTable.RegisterMethod("cn.minijvm.concurrency.MiniThread", "sleepCurrentThread", "(I)V", ThreadSleep)
 

@@ -12,6 +12,7 @@ Mini-JVM首先会从`classpath`中加载主类的class文件，然后找到main�
 - 条件判断、for循环
 - 控制台打印
 - 简单对象创建
+- 字符串常量，即`String name = "hello, 世界"`
 - 对象字段读写、静态字段读写
 - 方法重载、方法重写、接口方法调用、形参全部为int类型的static方法调用
 - native方法调用(本地方法表)
@@ -248,6 +249,30 @@ public class ThreadTest {
 --- PASS: TestThread (6.90s)
 PASS
 ```
+
+
+
+字符串打印：`testcase/src/com/fh/StringTest.java`
+
+```java
+package com.fh;
+import cn.minijvm.io.Printer;
+
+public class StringTest {
+    public static void main(String[] args) {
+        String name = "hello, 世界";
+        Printer.printString(name);
+    }
+}
+```
+
+输出：
+
+```
+hello, 世界
+```
+
+
 
 
 

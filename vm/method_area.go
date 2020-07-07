@@ -2,6 +2,7 @@ package vm
 
 import (
 	"archive/zip"
+	"errors"
 	"fmt"
 	"github.com/wanghongfei/mini-jvm/utils"
 	"github.com/wanghongfei/mini-jvm/vm/class"
@@ -10,6 +11,8 @@ import (
 	"os"
 	"strings"
 )
+
+var ClassIgnoredErr = errors.New("ignored")
 
 // 方法区
 type MethodArea struct {
@@ -21,23 +24,41 @@ type MethodArea struct {
 	// key: 类的选限定性名
 	// val: 加载完成后的DefFile
 	ClassMap map[string]*class.DefFile
+
+	// 忽略的class的全名, 遇到这些class时不触发加载逻辑
+	IgnoredClasses map[string]interface{}
 }
 
-func NewMethodArea(jvm *MiniJvm, classpaths []string) (*MethodArea, error) {
+func NewMethodArea(jvm *MiniJvm, classpaths []string, ignoredClasses []string) (*MethodArea, error) {
 	if nil == classpaths || len(classpaths) == 0 {
 		return nil, fmt.Errorf("invalid classpath: %v", classpaths)
 	}
 
-	return &MethodArea{
+	res := &MethodArea{
 		Jvm: jvm,
 		ClassPaths: classpaths,
 		ClassMap: make(map[string]*class.DefFile),
-	}, nil
+		IgnoredClasses: make(map[string]interface{}),
+	}
+
+	if nil != ignoredClasses {
+		for _, name := range ignoredClasses {
+			res.IgnoredClasses[name] = struct {}{}
+		}
+	}
+
+	return res, nil
 }
 
 // 从classpath中加载一个类
 // fullname: 全限定性名
 func (m *MethodArea) LoadClass(fullyQualifiedName string) (*class.DefFile, error) {
+	// 查忽略列表
+	if _, ok := m.IgnoredClasses[fullyQualifiedName]; ok {
+		// 此class被忽略
+		return nil, ClassIgnoredErr
+	}
+
 	// 先从已加载的类中寻找
 	targetClassDef, ok := m.ClassMap[fullyQualifiedName]
 	if ok {

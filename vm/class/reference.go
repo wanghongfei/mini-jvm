@@ -105,6 +105,18 @@ func allocateFields(def *DefFile, fields map[string]*ObjectField) error {
 			f.FieldType = "char"
 			f.FieldValue = 'a'
 
+		} else if "[C" == descriptor {
+			f.FieldValue = "[]rune"
+			f.FieldValue = make([]rune, 0)
+
+		} else if "J" == descriptor {
+			f.FieldValue = "long"
+			f.FieldValue = 0
+
+		} else if "[Ljava/io/ObjectStreamField;" == descriptor ||
+			"Ljava/util/Comparator;" == descriptor {
+			// 忽略
+
 		} else {
 			return fmt.Errorf("unsupported field descriptor '%s'", descriptor)
 		}
@@ -113,6 +125,30 @@ func allocateFields(def *DefFile, fields map[string]*ObjectField) error {
 	}
 
 	return nil
+}
+
+// 创建一个String对象, 用于String字面值常量的创建
+func NewStringObject(val []rune, cl Loader) (*Reference, error) {
+	stringDef, err := cl.LoadClass("java/lang/String")
+	if nil != err {
+		return nil, fmt.Errorf("failed to new String object:%w", err)
+	}
+
+	obj := &Object{
+		DefFile:      stringDef,
+		ObjectFields: make(map[string]*ObjectField),
+	}
+
+	obj.ObjectFields["value"] = &ObjectField{
+		FieldValue: val,
+		FieldType:  "[]rune",
+	}
+
+	return &Reference{
+		RefType: ReferanceTypeObject,
+		Object:  obj,
+		Array:   nil,
+	}, nil
 }
 
 

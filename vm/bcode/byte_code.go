@@ -10,6 +10,8 @@ const (
 	Iconst4 = 0x07
 	Iconst5 = 0x08
 
+	Ldc = 0x12
+
 	Iaload = 0x2e
 
 	Caload = 0x34

@@ -267,6 +267,25 @@ func (i *InterpretedExecutionEngine) executeInFrame(def *class.DefFile, codeAttr
 			arrRef, _ := frame.opStack.PopReference()
 			arrRef.Array.Data[arrIndex] = val
 
+		case bcode.Ldc:
+			// 将int、float或String类型常量值从常量池中推送至栈顶
+			// format: ldc byte
+
+			// 取出常量池数据项
+			strConst := def.ConstPool[codeAttr.Code[frame.pc + 1]].(*class.StringInfoConst)
+			frame.pc++
+			// 取出string字面值
+			strVal := def.ConstPool[strConst.StringIndex].(*class.Utf8InfoConst).String()
+
+			strRef, err := class.NewStringObject([]rune(strVal), i.miniJvm.MethodArea)
+			if nil != err {
+				return fmt.Errorf("failed to execute 'ldc':%w", err)
+			}
+
+			// 入栈
+			frame.opStack.Push(strRef)
+
+
 		case bcode.Dup:
 			// 复制栈顶数值并将复制值压入栈顶
 			top, _ := frame.opStack.GetTop()

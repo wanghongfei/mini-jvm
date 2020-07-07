@@ -2,6 +2,7 @@ package vm
 
 import (
 	"fmt"
+	"github.com/wanghongfei/mini-jvm/vm/class"
 )
 
 func PrintInt(args ...interface{}) interface{} {
@@ -23,3 +24,12 @@ func PrintChar(args ...interface{}) interface{} {
 	return true
 }
 
+func PrintString(args ...interface{}) interface{} {
+	strRef := args[1].(*class.Reference)
+	field := strRef.Object.ObjectFields["value"]
+	strVal := field.FieldValue.([]rune)
+
+	fmt.Printf("%v\n", string(strVal))
+
+	return true
+}

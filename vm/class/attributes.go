@@ -59,7 +59,11 @@ func (c *DefFile) ReadAttr(reader io.Reader) (interface{}, error) {
 
 		return srcAttr, nil
 
-	} else if "StackMapTable" == attrName {
+	} else if "StackMapTable" == attrName ||
+		"Signature" == attrName ||
+		"Deprecated" == attrName ||
+		"RuntimeVisibleAnnotations" == attrName ||
+		"Exceptions" == attrName {
 		// 跳过此属性
 		err := c.skipAttr(reader)
 		if nil != err {
