@@ -18,5 +18,8 @@ public class ArrayTest {
 
         Printer.printChar(chars[1]);
         Printer.printChar(chars[2]);
+
+        Printer.print(chars.length);
+        Printer.print(nums.length);
     }
 }

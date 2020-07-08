@@ -25,7 +25,7 @@ Mini-JVM首先会从`classpath`中加载主类的class文件，然后找到main�
 
 
 
-## 使用方法
+## 编译运行Mini-JVM
 
 编译(打开mod支持)：
 
@@ -47,6 +47,15 @@ go build -o mini-jvm
 
 
 
+## 编译testcase里的java代码
+
+```shell
+./compile-testcase.sh [.java文件相对于项目根目录的路径]
+./compile-testcase.sh com/fh/ArrayTest.java
+```
+
+
+
 
 
 ## 已支持的字节码
@@ -63,6 +72,8 @@ const (
 	Iconst3 = 0x06
 	Iconst4 = 0x07
 	Iconst5 = 0x08
+
+	Ldc = 0x12
 
 	Iaload = 0x2e
 
@@ -137,10 +148,13 @@ const (
 
 	New = 0xbb
 
+	Arraylength = 0xbe
+
 	Ireturn = 0xac
 
 	Wide = 0xc4
 )
+
 ```
 
 
@@ -157,6 +171,7 @@ const (
 
 ```java
 package com.fh;
+import cn.minijvm.io.Printer;
 
 public class Hanoi {
     final static char A = 1;  //设置3个字符标记3根柱子，只是标记作用，实际计算中用不到。
@@ -169,7 +184,7 @@ public class Hanoi {
         Hanoi hanoi = new Hanoi();
         hanoi.move(7, A, B, C);
 
-        printInt(hanoi.getSteps());
+        Printer.print(hanoi.getSteps());
     }
 
     public void move(int n, char A, char B, char C) {
@@ -184,8 +199,6 @@ public class Hanoi {
     public int getSteps() {
         return this.steps;
     }
-
-    public static native void printInt(int num);
 }
 
 ```
@@ -227,7 +240,6 @@ public class ThreadTest {
     }
 
 }
-
 ```
 
 输出：
@@ -285,20 +297,22 @@ hello, 世界
 
 ```java
 package com.fh;
+
+import cn.minijvm.io.Printer;
+
 public class ForLoopPrintTest {
     public static void main(String[] args) {
         int sum = 0;
         for (int ix = 1; ix <= 100; ++ix) {
             sum = add(sum, ix);
         }
-        print(sum);
+
+        Printer.print(sum);
     }
 
     public static int add(int x, int y) {
         return x + y;
     }
-
-    public static native void print(int num);
 }
 
 ```
@@ -311,6 +325,7 @@ public class ForLoopPrintTest {
 
 ```java
 package com.fh;
+import cn.minijvm.io.Printer;
 
 public class RecursionTest {
     public static void main(String[] args) {
@@ -323,12 +338,10 @@ public class RecursionTest {
             return;
         }
 
-        print(i);
+        Printer.print(i);
         i++;
         foo(i);
     }
-
-    public static native void print(int num);
 }
 ```
 
@@ -340,6 +353,8 @@ public class RecursionTest {
 
 ```java
 package com.fh;
+import cn.minijvm.io.Printer;
+
 public class NewSimpleObjectTest {
     public static void main(String[] args) {
         int sum = 0;
@@ -351,14 +366,12 @@ public class NewSimpleObjectTest {
         p.setAge(sum);
         int age = p.getAge();
 
-        print(age);
+        Printer.print(age);
     }
 
     public static int add(int x, int y) {
         return x + y;
     }
-
-    public static native void print(int num);
 }
 
 ```
@@ -369,10 +382,12 @@ public class NewSimpleObjectTest {
 
 ```java
 package com.fh;
+import cn.minijvm.io.Printer;
+
 public class MethodReloadTest {
     public static void main(String[] args) {
         int sum = add(100, 200);
-        print(sum);
+        Printer.print(sum);
     }
 
     public static int add(int x, int y) {
@@ -382,8 +397,6 @@ public class MethodReloadTest {
     public static int add(int x, int y, int z) {
         return x + y + z;
     }
-
-    public static native void print(int num);
 }
 
 ```
@@ -397,16 +410,16 @@ public class MethodReloadTest {
 ```java
 package com.fh;
 
+import cn.minijvm.io.Printer;
+
 public class ClassExtendTest {
     public static void main(String[] args) {
         Person person = new Person();
-        print(person.say());
+        Printer.print(person.say());
 
         person = new Student(); // Student继承了Person
-        print(person.say());
+        Printer.print(person.say());
     }
-
-    public static native void print(int num);
 }
 ```
 
@@ -456,10 +469,9 @@ public class IfTest {
         if (sum == 10) {
 
         }
-        print(sum);
+        Printer.print(sum);
     }
 
-    public static native void print(int num);
 
 ```
 

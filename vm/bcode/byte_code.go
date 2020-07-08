@@ -85,6 +85,8 @@ const (
 
 	New = 0xbb
 
+	Arraylength = 0xbe
+
 	Ireturn = 0xac
 
 	Wide = 0xc4

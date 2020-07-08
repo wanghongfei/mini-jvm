@@ -147,6 +147,13 @@ func TestArray(t *testing.T) {
 	if int('吗') != miniJvm.DebugPrintHistory[5] {
 		t.FailNow()
 	}
+
+	if 3 != miniJvm.DebugPrintHistory[6] {
+		t.FailNow()
+	}
+	if 5 != miniJvm.DebugPrintHistory[7] {
+		t.FailNow()
+	}
 }
 
 func TestInterface(t *testing.T) {

@@ -467,6 +467,14 @@ func (i *InterpretedExecutionEngine) executeInFrame(def *class.DefFile, codeAttr
 				isWideStatus = false
 			}
 
+		case bcode.Arraylength:
+			// Operand Stack
+			//..., arrayref →
+			//..., length
+			arrRef, _ := frame.opStack.PopReference()
+			val := len(arrRef.Array.Data)
+			frame.opStack.Push(val)
+
 
 		case bcode.New:
 			// 创建一个对象, 并将其引用值压入栈顶
