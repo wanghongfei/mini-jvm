@@ -30,6 +30,7 @@ const (
 	Iload2 = 0x1c
 	Iload3 = 0x1d
 
+	Aload = 0x19
 	Aload0 = 0x2a
 	Aload1 = 0x2b
 	Aload2 = 0x2c
@@ -46,6 +47,7 @@ const (
 	Istore = 0x36
 	Lstore1 = 0x40
 
+	Astore = 0x3a
 	Astore0 = 0x4b
 	Astore1 = 0x4c
 	Astore2 = 0x4d

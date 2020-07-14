@@ -8,6 +8,7 @@ import (
 	"github.com/wanghongfei/mini-jvm/vm/accflag"
 	"github.com/wanghongfei/mini-jvm/vm/bcode"
 	"github.com/wanghongfei/mini-jvm/vm/class"
+	"sync"
 )
 
 // 解释执行引擎
@@ -132,6 +133,26 @@ func (i *InterpretedExecutionEngine) ExecuteWithFrame(def *class.DefFile, method
 			obj, _ := lastFrame.opStack.PopReference()
 			frame.localVariablesTable[0] = obj
 		}
+
+		// 是否有同步关键字
+		if _, ok := flagMap[accflag.Synchronized]; ok {
+			// 决定用哪个锁
+			var lock *sync.Mutex
+			// 如果是静态方法
+			if _, isStatic := flagMap[accflag.Static]; isStatic {
+				// 锁的是class
+				lock = &def.Monitor
+			} else {
+				lock = &(frame.localVariablesTable[0].(*class.Reference).Monitor)
+			}
+
+			defer func() {
+				lock.Unlock()
+			}()
+
+			// 上锁
+			lock.Lock()
+		}
 	}
 
 
@@ -217,6 +238,11 @@ func (i *InterpretedExecutionEngine) executeInFrame(def *class.DefFile, codeAttr
 		case bcode.Iload3:
 			frame.opStack.Push(frame.localVariablesTable[3])
 
+		case bcode.Aload:
+			index := codeAttr.Code[frame.pc + 1]
+			frame.pc++
+
+			frame.opStack.Push(frame.localVariablesTable[index])
 		case bcode.Aload0:
 			// 将第一个引用类型本地变量推送至栈顶
 			ref := frame.GetLocalTableObjectAt(0)
@@ -242,6 +268,12 @@ func (i *InterpretedExecutionEngine) executeInFrame(def *class.DefFile, codeAttr
 			val, _ := frame.opStack.Pop()
 			frame.localVariablesTable[idx] = val
 
+		case bcode.Astore:
+			idx := codeAttr.Code[frame.pc + 1]
+			frame.pc++
+
+			val, _ := frame.opStack.Pop()
+			frame.localVariablesTable[idx] = val
 		case bcode.Astore0:
 			// 将栈顶引用型数值存入本地变量
 			ref, _ := frame.opStack.Pop()
@@ -647,13 +679,9 @@ func (i *InterpretedExecutionEngine) executeInFrame(def *class.DefFile, codeAttr
 			}
 
 		case bcode.Monitorenter:
-			ref, _ := frame.opStack.PopReference()
-			// 加锁
-			ref.Monitor.Lock()
+			i.bcodeMonitorEnter(def, frame, codeAttr)
 		case bcode.Monitorexit:
-			ref, _ := frame.opStack.PopReference()
-			// 放锁
-			ref.Monitor.Unlock()
+			i.bcodeMonitorExit(def, frame, codeAttr)
 
 		case bcode.Ireturn:
 			// 当前栈出栈, 值压如上一个栈
@@ -946,6 +974,20 @@ func (i *InterpretedExecutionEngine) bcodePutStatic(def *class.DefFile, frame *M
 
 	// set字段
 	targetClassDef.ParsedStaticFields[fieldName] = class.NewObjectField(val)
+
+	return nil
+}
+
+func (i *InterpretedExecutionEngine) bcodeMonitorEnter(def *class.DefFile, frame *MethodStackFrame, codeAttr *class.CodeAttr) error {
+	ref, _ := frame.opStack.PopReference()
+	ref.Monitor.Lock()
+
+	return nil
+}
+
+func (i *InterpretedExecutionEngine) bcodeMonitorExit(def *class.DefFile, frame *MethodStackFrame, codeAttr *class.CodeAttr) error {
+	ref, _ := frame.opStack.PopReference()
+	ref.Monitor.Unlock()
 
 	return nil
 }

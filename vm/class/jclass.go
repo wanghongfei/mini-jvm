@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/wanghongfei/mini-jvm/utils"
 	"io"
+	"sync"
 )
 
 // class文件定义
@@ -50,6 +51,9 @@ type DefFile struct {
 	// 保存static字段
 	// key: 字段名
 	ParsedStaticFields map[string]*ObjectField
+
+	// 锁, synchronized使用
+	Monitor sync.Mutex
 }
 
 func (c *DefFile) ExtractFullClassName() string {
