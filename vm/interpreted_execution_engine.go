@@ -228,6 +228,10 @@ func (i *InterpretedExecutionEngine) executeInFrame(def *class.DefFile, codeAttr
 			// 将第3个引用类型本地变量推送至栈顶
 			ref := frame.GetLocalTableObjectAt(2)
 			frame.opStack.Push(ref)
+		case bcode.Aload3:
+			// 将第4个引用类型本地变量推送至栈顶
+			ref := frame.GetLocalTableObjectAt(3)
+			frame.opStack.Push(ref)
 
 		case bcode.Istore:
 			// istore index
@@ -249,6 +253,9 @@ func (i *InterpretedExecutionEngine) executeInFrame(def *class.DefFile, codeAttr
 		case bcode.Astore2:
 			ref, _ := frame.opStack.Pop()
 			frame.localVariablesTable[2] = ref
+		case bcode.Astore3:
+			ref, _ := frame.opStack.Pop()
+			frame.localVariablesTable[3] = ref
 
 		case bcode.Iastore:
 			// 在int数组中存储元素
@@ -638,6 +645,15 @@ func (i *InterpretedExecutionEngine) executeInFrame(def *class.DefFile, codeAttr
 			if nil != err {
 				return fmt.Errorf("failed to execute 'athrow': %w", err)
 			}
+
+		case bcode.Monitorenter:
+			ref, _ := frame.opStack.PopReference()
+			// 加锁
+			ref.Monitor.Lock()
+		case bcode.Monitorexit:
+			ref, _ := frame.opStack.PopReference()
+			// 放锁
+			ref.Monitor.Unlock()
 
 		case bcode.Ireturn:
 			// 当前栈出栈, 值压如上一个栈

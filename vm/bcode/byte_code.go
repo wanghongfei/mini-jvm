@@ -33,11 +33,15 @@ const (
 	Aload0 = 0x2a
 	Aload1 = 0x2b
 	Aload2 = 0x2c
+	Aload3 = 0x2d
 
 	Getstatic = 0xb2
 	Putstatic = 0xb3
 
 	Athrow = 0xbf
+
+	Monitorenter = 0xc2
+	Monitorexit = 0xc3
 
 	Istore = 0x36
 	Lstore1 = 0x40
@@ -45,6 +49,7 @@ const (
 	Astore0 = 0x4b
 	Astore1 = 0x4c
 	Astore2 = 0x4d
+	Astore3 = 0x4e
 	Iastore = 0x4f
 
 	Castore = 0x55

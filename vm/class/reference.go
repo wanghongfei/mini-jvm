@@ -3,6 +3,7 @@ package class
 import (
 	"fmt"
 	"strings"
+	"sync"
 )
 
 const (
@@ -19,6 +20,9 @@ type Reference struct {
 
 	Object *Object
 	Array *Array
+
+	// 锁
+	Monitor sync.Mutex
 }
 
 

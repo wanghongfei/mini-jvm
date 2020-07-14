@@ -18,6 +18,7 @@ Mini-JVM首先会从`classpath`中加载主类的class文件，然后找到main�
 - native方法调用(本地方法表)
 - 部分继承特性(字段继承、方法继承)
 - 非标准库Thread类的线程支持
+- synchronized关键字同步支持
 
 
 
@@ -96,11 +97,15 @@ const (
 	Aload0 = 0x2a
 	Aload1 = 0x2b
 	Aload2 = 0x2c
+	Aload3 = 0x2d
 
 	Getstatic = 0xb2
 	Putstatic = 0xb3
 
 	Athrow = 0xbf
+
+	Monitorenter = 0xc2
+	Monitorexit = 0xc3
 
 	Istore = 0x36
 	Lstore1 = 0x40
@@ -108,6 +113,7 @@ const (
 	Astore0 = 0x4b
 	Astore1 = 0x4c
 	Astore2 = 0x4d
+	Astore3 = 0x4e
 	Iastore = 0x4f
 
 	Castore = 0x55
@@ -220,44 +226,45 @@ import cn.minijvm.io.Printer;
 public class ThreadTest {
     public static void main(String[] args) {
         // 创建协程支持的线程
-        MiniThread th = new MiniThread();
-        Printer.print(-100);
+        MiniThread th1 = new MiniThread();
+        MiniThread th2 = new MiniThread();
 
         // 启动并执行线程
-        th.start(new MyTask());
-        // 当前线程休眠, 防止刚启动的线程还没来得及运行
-        MiniThread.sleepCurrentThread(4);
+        MyTask task = new MyTask();
+        th1.start(task);
+        th2.start(task);
 
-        Printer.print(-200);
+        // 当前线程休眠, 防止刚启动的线程还没来得及运行
+        MiniThread.sleepCurrentThread(1);
     }
 
     public static class MyTask implements Runnable {
+        private int number = 0;
+
         public void run() {
-            for (int ix = 0; ix < 10; ix++) {
-                Printer.print(ix);
+            for (int ix = 0; ix < 100; ix++) {
+                synchronized (this) {
+                    this.number++;
+                    Printer.print(number);
+                }
             }
         }
     }
 
 }
+
 ```
 
 输出：
 
 ```shell
 === RUN   TestThread
--100
-0
 1
 2
 3
-4
-5
-6
-7
-8
-9
--200
+...
+...
+200
 --- PASS: TestThread (6.90s)
 PASS
 ```

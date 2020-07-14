@@ -23,6 +23,7 @@ type MethodArea struct {
 
 	// key: 类的选限定性名
 	// val: 加载完成后的DefFile
+	// todo 需要加锁
 	ClassMap map[string]*class.DefFile
 
 	// 忽略的class的全名, 遇到这些class时不触发加载逻辑
