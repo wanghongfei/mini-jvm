@@ -14,6 +14,7 @@ const (
 
 	Iaload = 0x2e
 
+	Aaload = 0x32
 	Caload = 0x34
 
 	Istore0 = 0x3b

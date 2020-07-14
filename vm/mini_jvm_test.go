@@ -229,7 +229,7 @@ func TestStaticField(t *testing.T) {
 }
 
 func TestThread(t *testing.T) {
-	miniJvm, err := NewMiniJvm("com.fh.thread.ThreadTest", []string{"../testcase/classes", "../mini-lib/classes"})
+	miniJvm, err := NewMiniJvm("com.fh.thread.ThreadTest", []string{"../testcase/classes", "../mini-lib/classes", "/Library/Java/JavaVirtualMachines/jdk1.8.0_181.jdk/Contents/Home/jre/lib/rt.jar"})
 	if nil != err {
 		t.Fatal(err)
 	}

@@ -5,6 +5,11 @@ import cn.minijvm.io.Printer;
 
 public class ThreadTest {
     public static void main(String[] args) {
+        Printer.print(args.length);
+        for (String str : args) {
+            Printer.printString(str);
+        }
+
         // 创建协程支持的线程
         MiniThread th1 = new MiniThread();
         MiniThread th2 = new MiniThread();

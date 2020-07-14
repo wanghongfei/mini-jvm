@@ -8,6 +8,9 @@ import (
 
 // VM定义
 type MiniJvm struct {
+	// 命令行参数
+	CmdArgs []string
+
 	// 方法区
 	MethodArea *MethodArea
 
@@ -32,13 +35,17 @@ type ExecutionEngine interface {
 	ExecuteWithFrame(file *class.DefFile, methodName string, descriptor string, frame *MethodStackFrame) error
 }
 
-func NewMiniJvm(mainClass string, classPaths[] string) (*MiniJvm, error) {
+func NewMiniJvm(mainClass string, classPaths []string, cmdArgs... string) (*MiniJvm, error) {
 	if "" == mainClass {
 		return nil, fmt.Errorf("invalid main class '%s'", mainClass)
 	}
 
+	if nil == cmdArgs {
+		cmdArgs = []string {"MiniJvm"}
+	}
 
 	vm := &MiniJvm{
+		CmdArgs:  cmdArgs,
 		MethodArea: nil,
 		MainClass:  strings.ReplaceAll(mainClass, ".", "/"),
 		DebugPrintHistory: make([]interface{}, 0, 3),

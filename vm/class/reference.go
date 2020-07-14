@@ -256,9 +256,9 @@ type Array struct {
 }
 
 func NewArray(maxLen int, atype byte) (*Reference, error) {
-	if atype < 4 || atype > 11 {
-		return nil, fmt.Errorf("unsupported array type '%d'", atype)
-	}
+	//if atype < 4 || atype > 11 {
+	//	return nil, fmt.Errorf("unsupported array type '%d'", atype)
+	//}
 
 	arr := &Array{
 		Type: atype,

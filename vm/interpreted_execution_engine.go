@@ -78,9 +78,23 @@ func (i *InterpretedExecutionEngine) ExecuteWithFrame(def *class.DefFile, method
 	frame := newMethodStackFrame(int(codeAttr.MaxStack), int(codeAttr.MaxLocals))
 
 	// 如果没有上层栈帧
-	if nil == lastFrame {
-		// 说明是main方法
-		// todo 暂时不保存参数
+	if nil == lastFrame && "main" == methodName {
+		// main方法, 提取命令行参数, 构造String[]
+		cmdArgs, _ := class.NewArray(len(i.miniJvm.CmdArgs), 0)
+		cmdArgs.Array.Type = 0
+
+		// 构造String[]数组
+		cmdArgs.Array.Data = make([]interface{}, 0, len(i.miniJvm.CmdArgs))
+		// stringRefs := make([]*class.Reference, 0, len(os.Args))
+		// 构造String对象
+		for _, goArg := range i.miniJvm.CmdArgs {
+			strRune := []rune(goArg)
+			stringRef, _ := class.NewStringObject(strRune, i.miniJvm.MethodArea)
+			cmdArgs.Array.Data = append(cmdArgs.Array.Data, stringRef)
+		}
+
+		// 把String[]参数放在本地变量表中
+		frame.localVariablesTable[0] = cmdArgs
 
 	} else {
 		// 传参
@@ -187,6 +201,15 @@ func (i *InterpretedExecutionEngine) executeInFrame(def *class.DefFile, codeAttr
 
 		case bcode.Iaload:
 			// 将int型数组指定索引的值推送至栈顶
+			// Operand Stack
+			//..., arrayref, index →
+			//..., value
+			arrIndex, _ := frame.opStack.PopInt()
+			arrRef, _ := frame.opStack.PopReference()
+			frame.opStack.Push(arrRef.Array.Data[arrIndex])
+
+		case bcode.Aaload:
+			// 将引用类型的数组指定索引值压栈
 			// Operand Stack
 			//..., arrayref, index →
 			//..., value
