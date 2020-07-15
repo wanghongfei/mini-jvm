@@ -13,6 +13,7 @@ Mini-JVM首先会从`classpath`中加载主类的class文件，然后找到main�
 - 控制台打印
 - 简单对象创建
 - 字符串常量，即`String name = "hello, 世界"`
+- main方法中可以读取到命令行参数
 - 对象字段读写、静态字段读写
 - 方法重载、方法重写、接口方法调用、形参全部为int类型的static方法调用
 - native方法调用(本地方法表)
@@ -37,13 +38,13 @@ go build -o mini-jvm
 运行：
 
 ```shell
-./mini-jvm [主类全限定性名] [classpath(支持.class文件所在目录或jar所在目录)]
+./mini-jvm -main [主类全限定性名，例如cn.fh.XXX] -classpath [类路径,可以是目录也可以是jar包路径, 多个用逗号分隔] [命令行参数,可选]
 ```
 
 由于Mini-JVM的控制台输出和线程用的是私有类而JDK中`rt.jar`中的类，所以需要在classpath中指定`mini-lib`所在路径，例如：
 
 ```shell
-./mini-jvm x.y.x.XXXMain mini-lib/  classpath1/ classpath2/ ... ...
+./mini-jvm -main x.y.x.XXXMain -classpath mini-lib,classpath1,classpath2 cmd1 cmd2
 ```
 
 
@@ -210,7 +211,7 @@ public class Hanoi {
 ```
 
 ```shell
-./mini-jvm cn.fh.Hanoi(主类名) testcase/classes/ mini-lib/classes  # 输出127
+./mini-jvm -main com.fh.Hanoi -classpath ../testcase/classes,../mini-lib/classes  # 输出127
 ```
 
 

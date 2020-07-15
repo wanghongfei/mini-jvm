@@ -3,6 +3,7 @@ package vm
 import (
 	"fmt"
 	"github.com/wanghongfei/mini-jvm/vm/class"
+	"os"
 	"strings"
 )
 
@@ -40,12 +41,14 @@ func NewMiniJvm(mainClass string, classPaths []string, cmdArgs... string) (*Mini
 		return nil, fmt.Errorf("invalid main class '%s'", mainClass)
 	}
 
-	if nil == cmdArgs {
-		cmdArgs = []string {"MiniJvm"}
+	vmArgs := []string {os.Args[0]}
+
+	if nil != cmdArgs {
+		vmArgs = append(vmArgs, cmdArgs...)
 	}
 
 	vm := &MiniJvm{
-		CmdArgs:  cmdArgs,
+		CmdArgs:  vmArgs,
 		MethodArea: nil,
 		MainClass:  strings.ReplaceAll(mainClass, ".", "/"),
 		DebugPrintHistory: make([]interface{}, 0, 3),
