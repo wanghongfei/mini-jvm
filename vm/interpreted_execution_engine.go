@@ -758,7 +758,7 @@ func (i *InterpretedExecutionEngine) invokeStatic(def *class.DefFile, frame *Met
 	// 取出目标class全名
 	targetClassFullName := def.ConstPool[classRef.FullClassNameIndex].(*class.Utf8InfoConst).String()
 	// 加载
-	targetDef, err := i.miniJvm.findDefClass(targetClassFullName)
+	targetDef, err := i.miniJvm.MethodArea.LoadClass(targetClassFullName)
 	if nil != err {
 		return fmt.Errorf("failed to load class for '%s': %w", targetClassFullName, err)
 	}
@@ -790,7 +790,7 @@ func (i *InterpretedExecutionEngine) invokeSpecial(def *class.DefFile, frame *Me
 	// 取出目标class全名
 	targetClassFullName := def.ConstPool[classRef.FullClassNameIndex].(*class.Utf8InfoConst).String()
 	// 加载
-	targetDef, err := i.miniJvm.findDefClass(targetClassFullName)
+	targetDef, err := i.miniJvm.MethodArea.LoadClass(targetClassFullName)
 	if nil != err {
 		return fmt.Errorf("failed to load class for '%s': %w", targetClassFullName, err)
 	}
@@ -945,7 +945,7 @@ func (i *InterpretedExecutionEngine) bcodeGetStatic(def *class.DefFile, frame *M
 	// 目标class全名
 	targetClassFullName := def.ConstPool[targetClassInfo.FullClassNameIndex].(*class.Utf8InfoConst).String()
 	// 加载
-	targetClassDef, err := i.miniJvm.findDefClass(targetClassFullName)
+	targetClassDef, err := i.miniJvm.MethodArea.LoadClass(targetClassFullName)
 	if nil != err {
 		return fmt.Errorf("failed to load target class '%s':%w", targetClassFullName, err)
 	}
@@ -981,7 +981,7 @@ func (i *InterpretedExecutionEngine) bcodePutStatic(def *class.DefFile, frame *M
 	// 目标class全名
 	targetClassFullName := def.ConstPool[targetClassInfo.FullClassNameIndex].(*class.Utf8InfoConst).String()
 	// 加载
-	targetClassDef, err := i.miniJvm.findDefClass(targetClassFullName)
+	targetClassDef, err := i.miniJvm.MethodArea.LoadClass(targetClassFullName)
 	if nil != err {
 		return fmt.Errorf("failed to load target class '%s':%w", targetClassFullName, err)
 	}
@@ -1101,7 +1101,7 @@ func (i *InterpretedExecutionEngine) findMethod(def *class.DefFile, methodName s
 		}
 
 		// 加载父类
-		parentDef, err := i.miniJvm.findDefClass(targetClassFullName)
+		parentDef, err := i.miniJvm.MethodArea.LoadClass(targetClassFullName)
 		if nil != err {
 			return nil, fmt.Errorf("failed to load superclass '%s': %w", targetClassFullName, err)
 		}

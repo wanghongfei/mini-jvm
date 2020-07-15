@@ -86,7 +86,7 @@ func (m *MiniJvm) Start() error {
 
 // 执行主类
 func (m *MiniJvm) executeMain() error {
-	mainClassDef, err := m.findDefClass(m.MainClass)
+	mainClassDef, err := m.MethodArea.LoadClass(m.MainClass)
 	if nil != err {
 		return err
 	}
@@ -94,20 +94,4 @@ func (m *MiniJvm) executeMain() error {
 	// 执行
 	// log.Printf("main class info: %+v\n", mainClassDef)
 	return m.ExecutionEngine.Execute(mainClassDef, "main")
-}
-
-func (m *MiniJvm) findDefClass(className string) (*class.DefFile, error) {
-	// 从已加载的类中查找
-	def, ok := m.MethodArea.ClassMap[className]
-	if ok {
-		return def, nil
-	}
-
-	// 不存在, 触发加载
-	def, err := m.MethodArea.LoadClass(className)
-	if nil != err {
-		return nil, fmt.Errorf("unabled to load class '%s': %w", className, err)
-	}
-
-	return def, nil
 }

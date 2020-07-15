@@ -10,6 +10,7 @@ import (
 	"io/ioutil"
 	"os"
 	"strings"
+	"sync"
 )
 
 var ClassIgnoredErr = errors.New("ignored")
@@ -23,8 +24,9 @@ type MethodArea struct {
 
 	// key: 类的选限定性名
 	// val: 加载完成后的DefFile
-	// todo 需要加锁
+	// 因为有可能在其他goroutine中加载类, 所以需要加锁
 	ClassMap map[string]*class.DefFile
+	ClassMapLock sync.RWMutex
 
 	// 忽略的class的全名, 遇到这些class时不触发加载逻辑
 	IgnoredClasses map[string]interface{}
@@ -61,7 +63,9 @@ func (m *MethodArea) LoadClass(fullyQualifiedName string) (*class.DefFile, error
 	}
 
 	// 先从已加载的类中寻找
+	m.ClassMapLock.RLock()
 	targetClassDef, ok := m.ClassMap[fullyQualifiedName]
+	m.ClassMapLock.RUnlock()
 	if ok {
 		return targetClassDef, nil
 	}
@@ -93,7 +97,9 @@ func (m *MethodArea) LoadClass(fullyQualifiedName string) (*class.DefFile, error
 		}
 	}
 
+	m.ClassMapLock.Lock()
 	m.ClassMap[fullyQualifiedName] = defFile
+	m.ClassMapLock.Unlock()
 
 	// 执行<clinit>方法
 	err = m.Jvm.ExecutionEngine.ExecuteWithDescriptor(defFile, "<clinit>", "()V")
