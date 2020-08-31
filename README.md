@@ -11,7 +11,8 @@ Mini-JVM首先会从`classpath`中加载主类的class文件，然后找到main�
 - int加法
 - 条件判断、for循环
 - 控制台打印
-- 简单对象创建
+- 简单对象(POJO)创建
+- 基本类型数组和引用类型的数组创建、读写
 - 字符串常量，即`String name = "hello, 世界"`
 - main方法中可以读取到命令行参数
 - 对象字段读写、静态字段读写
@@ -79,6 +80,7 @@ const (
 
 	Iaload = 0x2e
 
+	Aaload = 0x32
 	Caload = 0x34
 
 	Istore0 = 0x3b
@@ -95,6 +97,7 @@ const (
 	Iload2 = 0x1c
 	Iload3 = 0x1d
 
+	Aload = 0x19
 	Aload0 = 0x2a
 	Aload1 = 0x2b
 	Aload2 = 0x2c
@@ -111,12 +114,14 @@ const (
 	Istore = 0x36
 	Lstore1 = 0x40
 
+	Astore = 0x3a
 	Astore0 = 0x4b
 	Astore1 = 0x4c
 	Astore2 = 0x4d
 	Astore3 = 0x4e
 	Iastore = 0x4f
 
+	Aastore = 0x53
 	Castore = 0x55
 
 	Dup = 0x59
@@ -147,6 +152,7 @@ const (
 	Putfield = 0xb5
 
 	Newarray = 0xbc
+	Anewarray = 0xbd
 
 	Invokevirtual = 0xb6
 	Invokespecial = 0xb7

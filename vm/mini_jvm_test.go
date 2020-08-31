@@ -156,6 +156,26 @@ func TestArray(t *testing.T) {
 	}
 }
 
+func TestObjectArray(t *testing.T) {
+	miniJvm, err := NewMiniJvm("com.fh.ObjectArrayTest", []string{"../testcase/classes", "../mini-lib/classes"})
+	if nil != err {
+		t.Fatal(err)
+	}
+
+	err = miniJvm.Start()
+	if nil != err {
+		t.Fatal(err)
+	}
+
+	// assert
+	if 0 != miniJvm.DebugPrintHistory[0] {
+		t.FailNow()
+	}
+	if 100 != miniJvm.DebugPrintHistory[1] {
+		t.FailNow()
+	}
+}
+
 func TestInterface(t *testing.T) {
 	miniJvm, err := NewMiniJvm("com.fh.InterfaceTest", []string{"../testcase/classes", "../mini-lib/classes"})
 	if nil != err {
@@ -188,6 +208,17 @@ func TestException(t *testing.T) {
 	err = miniJvm.Start()
 	if nil != err {
 		t.Fatal(err)
+	}
+
+	// assert
+	if 10 != miniJvm.DebugPrintHistory[0] {
+		t.FailNow()
+	}
+	if 20 != miniJvm.DebugPrintHistory[1] {
+		t.FailNow()
+	}
+	if 30 != miniJvm.DebugPrintHistory[2] {
+		t.FailNow()
 	}
 }
 

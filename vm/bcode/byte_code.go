@@ -55,6 +55,7 @@ const (
 	Astore3 = 0x4e
 	Iastore = 0x4f
 
+	Aastore = 0x53
 	Castore = 0x55
 
 	Dup = 0x59
@@ -85,6 +86,7 @@ const (
 	Putfield = 0xb5
 
 	Newarray = 0xbc
+	Anewarray = 0xbd
 
 	Invokevirtual = 0xb6
 	Invokespecial = 0xb7
