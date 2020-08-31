@@ -321,6 +321,18 @@ func (i *InterpretedExecutionEngine) executeInFrame(def *class.DefFile, codeAttr
 
 			arrRef.Array.Data[arrIndex] = val
 
+		case bcode.Aastore:
+			// 在数组中保存引用类型
+			// stack: arrayref, index, value →
+			val, _ := frame.opStack.Pop()
+			arrIndex, _ := frame.opStack.PopInt()
+			arrRef, _ := frame.opStack.PopReference()
+
+			// todo 检查要保存的引用类型跟数组声明类型是否相符, 暂不实现
+			// 保存
+			arrRef.Array.Data[arrIndex] = val
+
+
 		case bcode.Castore:
 			// Store into char array
 			// stack: arrayref, index, value →
@@ -693,6 +705,38 @@ func (i *InterpretedExecutionEngine) executeInFrame(def *class.DefFile, codeAttr
 			}
 
 			// 数组引用入栈
+			frame.opStack.Push(arrRef)
+
+		case bcode.Anewarray:
+			// anewarray
+			// indexbyte1
+			// indexbyte2
+
+			// Operand Stack
+			//..., count →
+			//
+			//..., arrayref
+
+			// (indexbyte1 << 8) | indexbyte2 组合成常量池下标
+			twoByteNum := codeAttr.Code[frame.pc + 1 : frame.pc + 1 + 2]
+			frame.pc += 2
+			var objectRefCpIndex uint16
+			err := binary.Read(bytes.NewBuffer(twoByteNum), binary.BigEndian, &objectRefCpIndex)
+			if nil != err {
+				return fmt.Errorf("failed to read field_ref_cp_index: %w", err)
+			}
+
+			// 取出类型引用常量
+			// 暂时只支持class类型, 不支持interface类型
+			classInfoConst := def.ConstPool[objectRefCpIndex].(*class.ClassInfoConstInfo)
+			// 取出类名
+			className := def.ConstPool[classInfoConst.FullClassNameIndex].(*class.Utf8InfoConst).String()
+			// 取出数组容量
+			arrCap, _ := frame.opStack.PopInt()
+
+			// 创建数组
+			arrRef, _ := class.NewObjectArray(arrCap, className)
+			// 入栈
 			frame.opStack.Push(arrRef)
 
 		case bcode.Athrow:
@@ -1096,7 +1140,8 @@ func (i *InterpretedExecutionEngine) findMethod(def *class.DefFile, methodName s
 		parentClassRef := currentClassDef.ConstPool[currentClassDef.SuperClass].(*class.ClassInfoConstInfo)
 		// 取出父类全名
 		targetClassFullName := currentClassDef.ConstPool[parentClassRef.FullClassNameIndex].(*class.Utf8InfoConst).String()
-		if "java/lang/Object" == targetClassFullName {
+		// 查找到Object或者Exception就止步, 目前还没有支持这两个class的加载
+		if "java/lang/Object" == targetClassFullName || "java/lang/Exception" == targetClassFullName {
 			break
 		}
 

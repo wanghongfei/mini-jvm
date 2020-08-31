@@ -156,6 +156,18 @@ func TestArray(t *testing.T) {
 	}
 }
 
+func TestObjectArray(t *testing.T) {
+	miniJvm, err := NewMiniJvm("com.fh.ObjectArrayTest", []string{"../testcase/classes", "../mini-lib/classes"})
+	if nil != err {
+		t.Fatal(err)
+	}
+
+	err = miniJvm.Start()
+	if nil != err {
+		t.Fatal(err)
+	}
+}
+
 func TestInterface(t *testing.T) {
 	miniJvm, err := NewMiniJvm("com.fh.InterfaceTest", []string{"../testcase/classes", "../mini-lib/classes"})
 	if nil != err {

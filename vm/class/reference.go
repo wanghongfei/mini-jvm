@@ -100,6 +100,8 @@ func allocateFields(def *DefFile, fields map[string]*ObjectField) error {
 		// 实例名
 		name := def.ConstPool[fieldInfo.NameIndex].(*Utf8InfoConst).String()
 		descriptor := def.ConstPool[fieldInfo.DescriptorIndex].(*Utf8InfoConst).String()
+
+		// 根据不同的字段类型, 分配不同的初始值
 		if "I" == descriptor {
 			f.FieldType = "int"
 			f.FieldValue = 0
@@ -110,12 +112,29 @@ func allocateFields(def *DefFile, fields map[string]*ObjectField) error {
 			f.FieldValue = 'a'
 
 		} else if "[C" == descriptor {
-			f.FieldValue = "[]rune"
+			f.FieldType = "[]rune"
 			f.FieldValue = make([]rune, 0)
 
 		} else if "J" == descriptor {
-			f.FieldValue = "long"
+			f.FieldType = "long"
 			f.FieldValue = 0
+
+		} else if "Z" == descriptor {
+			f.FieldType = "bool"
+			f.FieldValue = false
+
+		} else if strings.HasPrefix(descriptor, "L") {
+			// L开头说明是Object类型
+			f.FieldType = "null;" + descriptor[1:]
+			// 值初始化为nil
+			f.FieldValue = nil
+
+		} else if strings.HasPrefix(descriptor, "[L") {
+			// 是对象数组类型
+			f.FieldType = "null;[" + descriptor[2:]
+			// 值初始化为nil
+			f.FieldValue = nil
+
 
 		} else if "[Ljava/io/ObjectStreamField;" == descriptor ||
 			"Ljava/util/Comparator;" == descriptor {
@@ -219,6 +238,12 @@ func ParseArgCount(descriptor string) int {
 type ObjectField struct {
 	// 实例值
 	FieldValue interface{}
+
+	// 实例类型
+	// ref: 非空引用
+	// arr: 非空数组引用
+	// int:
+	// null;类型  对象类型,但是目前值为null
 	FieldType string
 }
 
@@ -248,8 +273,11 @@ func (f *ObjectField) String() string {
 }
 
 type Array struct {
-	// 元素类型
+	// 原始元素类型
 	Type byte
+
+	// 对象类型
+	ObjectType string
 
 	// 数据
 	Data []interface{}
@@ -263,6 +291,19 @@ func NewArray(maxLen int, atype byte) (*Reference, error) {
 	arr := &Array{
 		Type: atype,
 		Data: make([]interface{}, maxLen),
+	}
+
+	return &Reference{
+		RefType: ReferanceTypeArray,
+		Object:  nil,
+		Array:   arr,
+	}, nil
+}
+
+func NewObjectArray(maxLen int, className string) (*Reference, error) {
+	arr := &Array{
+		ObjectType: className,
+		Data:       make([]interface{}, maxLen),
 	}
 
 	return &Reference{
