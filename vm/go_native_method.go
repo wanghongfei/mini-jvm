@@ -6,30 +6,37 @@ import (
 )
 
 func PrintInt(args ...interface{}) interface{} {
-	fmt.Println(args[1])
+	fmt.Println(args[2])
 
-	return true
+	return nil
 }
 
 func PrintInt2(args ...interface{}) interface{} {
-	fmt.Println(args[1])
 	fmt.Println(args[2])
+	fmt.Println(args[3])
 
-	return true
+	return nil
 }
 
 func PrintChar(args ...interface{}) interface{} {
-	fmt.Printf("%c\n", args[1])
+	fmt.Printf("%c\n", args[2])
 
-	return true
+	return nil
 }
 
 func PrintString(args ...interface{}) interface{} {
-	strRef := args[1].(*class.Reference)
+	strRef := args[2].(*class.Reference)
 	field := strRef.Object.ObjectFields["value"]
 	strVal := field.FieldValue.([]rune)
 
 	fmt.Printf("%v\n", string(strVal))
 
-	return true
+	return nil
+}
+
+// Object.hashcode()方法实现
+// return: int
+func ObjectHashCode(args ...interface{}) interface{} {
+	ref := args[1].(*class.Reference)
+	return ref.Object.HashCode
 }

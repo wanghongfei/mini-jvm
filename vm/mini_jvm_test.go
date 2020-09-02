@@ -290,3 +290,15 @@ func TestString(t *testing.T) {
 	}
 
 }
+
+func TestObjectLoading(t *testing.T) {
+	miniJvm, err := NewMiniJvm("com.fh.ObjectTest", []string{"../testcase/classes", "../mini-lib/classes", "/Library/Java/JavaVirtualMachines/jdk1.8.0_181.jdk/Contents/Home/jre/lib/rt.jar"})
+	if nil != err {
+		t.Fatal(err)
+	}
+
+	err = miniJvm.Start()
+	if nil != err {
+		t.Fatal(err)
+	}
+}

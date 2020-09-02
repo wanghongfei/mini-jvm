@@ -44,26 +44,49 @@ func (i *InterpretedExecutionEngine) ExecuteWithFrame(def *class.DefFile, method
 			return fmt.Errorf("unsupported native method '%s'", method)
 		}
 
+		// 调用本地方法时, 固定第一个参数时JVM指针
+		nativeSpecialArgJvm := i.miniJvm
+		// 第二个参数时方法接收者
+		var nativeSpecialArgReceiver interface{}
+
+		// 是否为static方法
+		_, isStatic := flagMap[accflag.Static]
+		if !isStatic {
+			// 取出this引用
+			obj, _ := lastFrame.opStack.GetTopObject()
+			nativeSpecialArgReceiver = obj
+
+		} else {
+			// 接收者是class本身
+			nativeSpecialArgReceiver = def
+		}
+
 		// 从操作数栈取出argCount个参数
-		argCount += 1
+		argCount += 2
 		args := make([]interface{}, 0, argCount)
 		for ix := 0; ix < argCount; ix++ {
 			arg, _ := lastFrame.opStack.Pop()
 			args = append(args, arg)
 		}
 
-		// 将jvm指针放到参数里,给native方法访问jvm的能力
-		args[argCount - 1] = i.miniJvm
+		// 填充前2个固定参数
+		args[argCount - 1] = nativeSpecialArgJvm
+		args[argCount - 2] = nativeSpecialArgReceiver
 
 		// 因为出栈顺序跟实际参数顺序是相反的, 所以需要反转数组
 		for ix := 0; ix < argCount / 2; ix++ {
 			args[ix], args[argCount - 1 - ix] = args[argCount - 1 - ix], args[ix]
 		}
 
-		i.miniJvm.DebugPrintHistory = append(i.miniJvm.DebugPrintHistory, args[1:]...)
+		i.miniJvm.DebugPrintHistory = append(i.miniJvm.DebugPrintHistory, args[2:]...)
 
 		// 调用go函数
-		nativeFunc(args...)
+		funcRet := nativeFunc(args...)
+		if nil != funcRet {
+			// native函数有返回值
+			// 返回值压入上一个栈中
+			lastFrame.opStack.Push(funcRet)
+		}
 
 		return nil
 	}
@@ -751,7 +774,7 @@ func (i *InterpretedExecutionEngine) executeInFrame(def *class.DefFile, codeAttr
 			i.bcodeMonitorExit(def, frame, codeAttr)
 
 		case bcode.Ireturn:
-			// 当前栈出栈, 值压如上一个栈
+			// 当前栈出栈, 值压入上一个栈
 			op, _ := frame.opStack.PopInt()
 			lastFrame.opStack.Push(op)
 

@@ -2,8 +2,10 @@ package class
 
 import (
 	"fmt"
+	"math/rand"
 	"strings"
 	"sync"
+	"time"
 )
 
 const (
@@ -29,6 +31,8 @@ type Reference struct {
 type Object struct {
 	// class定义
 	DefFile *DefFile
+	// 对象的hashCode
+	HashCode int
 
 	// 实例数据
 	ObjectFields map[string]*ObjectField
@@ -52,11 +56,16 @@ func NewObject(def *DefFile, cl Loader) (*Reference, error) {
 			return nil, fmt.Errorf("failed to allcate field for class: %w", err)
 		}
 
+		if 0 == currentDef.SuperClass {
+			// 没有父类了, 说明这是Object
+			break
+		}
 
 		// 父类
 		superClassCp := currentDef.ConstPool[currentDef.SuperClass].(*ClassInfoConstInfo)
 		superClassFullName := currentDef.ConstPool[superClassCp.FullClassNameIndex].(*Utf8InfoConst).String()
-		if "java/lang/Object" == superClassFullName || "java/lang/Exception" == superClassFullName {
+		if "java/lang/Exception" == superClassFullName {
+		//if "java/lang/Object" == superClassFullName || "java/lang/Exception" == superClassFullName {
 			break
 		}
 
@@ -68,23 +77,10 @@ func NewObject(def *DefFile, cl Loader) (*Reference, error) {
 		currentDef = superClassDef
 	}
 
-
-	//for _, fieldInfo := range def.Fields {
-	//	f := new(ObjectField)
-	//
-	//	// 实例名
-	//	name := def.ConstPool[fieldInfo.NameIndex].(*Utf8InfoConst).String()
-	//	descriptor := def.ConstPool[fieldInfo.DescriptorIndex].(*Utf8InfoConst).String()
-	//	if "I" == descriptor {
-	//		f.FieldType = "int"
-	//		f.FieldValue = 0
-	//
-	//	} else {
-	//		return nil, fmt.Errorf("unsupported field descriptor '%s'", descriptor)
-	//	}
-	//
-	//	o.ObjectFields[name] = f
-	//}
+	// 生成hashcode
+	rand.Seed(time.Now().UnixNano())
+	hashCode := rand.Intn(65535)
+	o.HashCode = hashCode
 
 	return &Reference{
 		RefType: ReferanceTypeObject,

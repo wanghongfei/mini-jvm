@@ -76,6 +76,8 @@ func NewMiniJvm(mainClass string, classPaths []string, cmdArgs... string) (*Mini
 	nativeMethodTable.RegisterMethod("cn.minijvm.concurrency.MiniThread", "start", "(Ljava/lang/Runnable;)V", ExecuteInThread)
 	nativeMethodTable.RegisterMethod("cn.minijvm.concurrency.MiniThread", "sleepCurrentThread", "(I)V", ThreadSleep)
 
+	nativeMethodTable.RegisterMethod("java.lang.Object", "hashCode", "()I", ObjectHashCode)
+
 	return vm, nil
 }
 
