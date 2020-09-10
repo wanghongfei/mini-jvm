@@ -48,6 +48,13 @@ go build -o mini-jvm
 ./mini-jvm -main x.y.x.XXXMain -classpath mini-lib,classpath1,classpath2 cmd1 cmd2
 ```
 
+单元测试`mini_jvm_test.go`中的case需要先修改`rtJarPath`为自己机器上`rt.jar`的路径后才能跑通：
+
+```go
+// 改成自己电脑中rt.jar的路径
+var rtJarPath = "/Library/Java/JavaVirtualMachines/jdk1.8.0_181.jdk/Contents/Home/jre/lib/rt.jar"
+```
+
 
 
 ## 编译testcase里的java代码
@@ -146,6 +153,7 @@ const (
 	Ificmple = 0xa4
 	Goto = 0xa7
 
+	Areturn = 0xb0
 	Return = 0xb1
 
 	GetField = 0xb4
@@ -167,7 +175,6 @@ const (
 
 	Wide = 0xc4
 )
-
 ```
 
 

@@ -5,8 +5,11 @@ import (
 	"testing"
 )
 
+// 改成自己电脑中rt.jar的路径
+var rtJarPath = "/Library/Java/JavaVirtualMachines/jdk1.8.0_181.jdk/Contents/Home/jre/lib/rt.jar"
+
 func TestHelloNative(t *testing.T) {
-	miniJvm, err := NewMiniJvm("com.fh.ForLoopPrintTest", []string{"../testcase/classes", "../mini-lib/classes"})
+	miniJvm, err := NewMiniJvm("com.fh.ForLoopPrintTest", []string{"../testcase/classes", "../mini-lib/classes", "/Library/Java/JavaVirtualMachines/jdk1.8.0_181.jdk/Contents/Home/jre/lib/rt.jar"})
 	if nil != err {
 		t.Fatal(err)
 	}
@@ -23,7 +26,7 @@ func TestHelloNative(t *testing.T) {
 }
 
 func TestHelloClass(t *testing.T) {
-	miniJvm, err := NewMiniJvm("com.fh.NewSimpleObjectTest", []string{"../testcase/classes", "../mini-lib/classes"})
+	miniJvm, err := NewMiniJvm("com.fh.NewSimpleObjectTest", []string{"../testcase/classes", "../mini-lib/classes", rtJarPath})
 	if nil != err {
 		t.Fatal(err)
 	}
@@ -40,7 +43,7 @@ func TestHelloClass(t *testing.T) {
 }
 
 func TestHelloMethod(t *testing.T) {
-	miniJvm, err := NewMiniJvm("com.fh.MethodReloadTest", []string{"../testcase/classes", "../mini-lib/classes"})
+	miniJvm, err := NewMiniJvm("com.fh.MethodReloadTest", []string{"../testcase/classes", "../mini-lib/classes", rtJarPath})
 	if nil != err {
 		t.Fatal(err)
 	}
@@ -57,7 +60,7 @@ func TestHelloMethod(t *testing.T) {
 }
 
 func TestClassExtend(t *testing.T) {
-	miniJvm, err := NewMiniJvm("com.fh.ClassExtendTest", []string{"../testcase/classes", "../mini-lib/classes"})
+	miniJvm, err := NewMiniJvm("com.fh.ClassExtendTest", []string{"../testcase/classes", "../mini-lib/classes", rtJarPath})
 	if nil != err {
 		t.Fatal(err)
 	}
@@ -77,7 +80,7 @@ func TestClassExtend(t *testing.T) {
 }
 
 func TestRecursion(t *testing.T) {
-	miniJvm, err := NewMiniJvm("com.fh.RecursionTest", []string{"../testcase/classes", "../mini-lib/classes"})
+	miniJvm, err := NewMiniJvm("com.fh.RecursionTest", []string{"../testcase/classes", "../mini-lib/classes", rtJarPath})
 	if nil != err {
 		t.Fatal(err)
 	}
@@ -97,7 +100,7 @@ func TestRecursion(t *testing.T) {
 }
 
 func TestIfTest(t *testing.T) {
-	miniJvm, err := NewMiniJvm("com.fh.IfTest", []string{"../testcase/classes", "../mini-lib/classes"})
+	miniJvm, err := NewMiniJvm("com.fh.IfTest", []string{"../testcase/classes", "../mini-lib/classes", rtJarPath})
 	if nil != err {
 		t.Fatal(err)
 	}
@@ -117,7 +120,7 @@ func TestIfTest(t *testing.T) {
 }
 
 func TestArray(t *testing.T) {
-	miniJvm, err := NewMiniJvm("com.fh.ArrayTest", []string{"../testcase/classes", "../mini-lib/classes"})
+	miniJvm, err := NewMiniJvm("com.fh.ArrayTest", []string{"../testcase/classes", "../mini-lib/classes", rtJarPath})
 	if nil != err {
 		t.Fatal(err)
 	}
@@ -157,7 +160,7 @@ func TestArray(t *testing.T) {
 }
 
 func TestObjectArray(t *testing.T) {
-	miniJvm, err := NewMiniJvm("com.fh.ObjectArrayTest", []string{"../testcase/classes", "../mini-lib/classes"})
+	miniJvm, err := NewMiniJvm("com.fh.ObjectArrayTest", []string{"../testcase/classes", "../mini-lib/classes", rtJarPath})
 	if nil != err {
 		t.Fatal(err)
 	}
@@ -177,7 +180,7 @@ func TestObjectArray(t *testing.T) {
 }
 
 func TestInterface(t *testing.T) {
-	miniJvm, err := NewMiniJvm("com.fh.InterfaceTest", []string{"../testcase/classes", "../mini-lib/classes"})
+	miniJvm, err := NewMiniJvm("com.fh.InterfaceTest", []string{"../testcase/classes", "../mini-lib/classes", rtJarPath})
 	if nil != err {
 		t.Fatal(err)
 	}
@@ -200,7 +203,7 @@ func TestInterface(t *testing.T) {
 }
 
 func TestException(t *testing.T) {
-	miniJvm, err := NewMiniJvm("com.fh.ExceptionTest", []string{"../testcase/classes", "../mini-lib/classes", "/Library/Java/JavaVirtualMachines/jdk1.8.0_181.jdk/Contents/Home/jre/lib/rt.jar"})
+	miniJvm, err := NewMiniJvm("com.fh.ExceptionTest", []string{"../testcase/classes", "../mini-lib/classes", rtJarPath})
 	if nil != err {
 		t.Fatal(err)
 	}
@@ -224,7 +227,7 @@ func TestException(t *testing.T) {
 
 
 func TestHanoi(t *testing.T) {
-	miniJvm, err := NewMiniJvm("com.fh.Hanoi", []string{"../testcase/classes", "../mini-lib/classes"})
+	miniJvm, err := NewMiniJvm("com.fh.Hanoi", []string{"../testcase/classes", "../mini-lib/classes", rtJarPath})
 	if nil != err {
 		t.Fatal(err)
 	}
@@ -240,7 +243,7 @@ func TestHanoi(t *testing.T) {
 }
 
 func TestStaticField(t *testing.T) {
-	miniJvm, err := NewMiniJvm("com.fh.StaticFieldTest", []string{"../testcase/classes", "../mini-lib/classes"})
+	miniJvm, err := NewMiniJvm("com.fh.StaticFieldTest", []string{"../testcase/classes", "../mini-lib/classes", rtJarPath})
 	if nil != err {
 		t.Fatal(err)
 	}
@@ -260,7 +263,7 @@ func TestStaticField(t *testing.T) {
 }
 
 func TestThread(t *testing.T) {
-	miniJvm, err := NewMiniJvm("com.fh.thread.ThreadTest", []string{"../testcase/classes", "../mini-lib/classes", "/Library/Java/JavaVirtualMachines/jdk1.8.0_181.jdk/Contents/Home/jre/lib/rt.jar"})
+	miniJvm, err := NewMiniJvm("com.fh.thread.ThreadTest", []string{"../testcase/classes", "../mini-lib/classes", rtJarPath})
 	if nil != err {
 		t.Fatal(err)
 	}
@@ -273,7 +276,7 @@ func TestThread(t *testing.T) {
 }
 
 func TestString(t *testing.T) {
-	miniJvm, err := NewMiniJvm("com.fh.StringTest", []string{"../testcase/classes", "../mini-lib/classes", "/Library/Java/JavaVirtualMachines/jdk1.8.0_181.jdk/Contents/Home/jre/lib/rt.jar"})
+	miniJvm, err := NewMiniJvm("com.fh.StringTest", []string{"../testcase/classes", "../mini-lib/classes", rtJarPath})
 	if nil != err {
 		t.Fatal(err)
 	}
@@ -292,7 +295,7 @@ func TestString(t *testing.T) {
 }
 
 func TestObjectLoading(t *testing.T) {
-	miniJvm, err := NewMiniJvm("com.fh.ObjectTest", []string{"../testcase/classes", "../mini-lib/classes", "/Library/Java/JavaVirtualMachines/jdk1.8.0_181.jdk/Contents/Home/jre/lib/rt.jar"})
+	miniJvm, err := NewMiniJvm("com.fh.ObjectTest", []string{"../testcase/classes", "../mini-lib/classes", rtJarPath})
 	if nil != err {
 		t.Fatal(err)
 	}

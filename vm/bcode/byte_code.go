@@ -80,6 +80,7 @@ const (
 	Ificmple = 0xa4
 	Goto = 0xa7
 
+	Areturn = 0xb0
 	Return = 0xb1
 
 	GetField = 0xb4

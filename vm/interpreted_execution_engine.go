@@ -32,6 +32,8 @@ func (i *InterpretedExecutionEngine) ExecuteWithFrame(def *class.DefFile, method
 	if nil != err {
 		return fmt.Errorf("failed to find method: %w", err)
 	}
+	// 因为method有可能是在父类中找到的，因此需要更新一下def到method对应的def
+	def = method.DefFile
 
 	// 解析访问标记
 	flagMap := accflag.ParseAccFlags(method.AccessFlags)
@@ -780,6 +782,13 @@ func (i *InterpretedExecutionEngine) executeInFrame(def *class.DefFile, codeAttr
 
 			exitLoop = true
 
+		case bcode.Areturn:
+			// 当前栈出栈, 值压入上一个栈
+			ref, _ := frame.opStack.PopReference()
+			lastFrame.opStack.Push(ref)
+
+			exitLoop = true
+
 		case bcode.Return:
 			// 返回
 			exitLoop = true
@@ -1159,12 +1168,16 @@ func (i *InterpretedExecutionEngine) findMethod(def *class.DefFile, methodName s
 			}
 		}
 
+		if 0 == def.SuperClass {
+			break
+		}
+
 		// 从父类中寻找
 		parentClassRef := currentClassDef.ConstPool[currentClassDef.SuperClass].(*class.ClassInfoConstInfo)
 		// 取出父类全名
 		targetClassFullName := currentClassDef.ConstPool[parentClassRef.FullClassNameIndex].(*class.Utf8InfoConst).String()
-		// 查找到Object或者Exception就止步, 目前还没有支持这两个class的加载
-		if "java/lang/Object" == targetClassFullName || "java/lang/Exception" == targetClassFullName {
+		// 查找到Exception就止步, 目前还没有支持这个class的加载
+		if "java/lang/Exception" == targetClassFullName {
 			break
 		}
 

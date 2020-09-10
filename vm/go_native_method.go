@@ -3,6 +3,7 @@ package vm
 import (
 	"fmt"
 	"github.com/wanghongfei/mini-jvm/vm/class"
+	"sync"
 )
 
 func PrintInt(args ...interface{}) interface{} {
@@ -39,4 +40,25 @@ func PrintString(args ...interface{}) interface{} {
 func ObjectHashCode(args ...interface{}) interface{} {
 	ref := args[1].(*class.Reference)
 	return ref.Object.HashCode
+}
+
+// Object.clone()方法实现
+func ObjectClone(args ...interface{}) interface{} {
+	// 要克隆的对象的引用
+	targetRef := args[1].(*class.Reference)
+
+	targetObj := &class.Object{
+		DefFile:      targetRef.Object.DefFile,
+		HashCode:     targetRef.Object.HashCode + 1,
+		ObjectFields: targetRef.Object.ObjectFields,
+	}
+
+	newRef := &class.Reference{
+		RefType: targetRef.RefType,
+		Object:  targetObj,
+		Array:   nil,
+		Monitor: sync.Mutex{},
+	}
+
+	return newRef
 }
