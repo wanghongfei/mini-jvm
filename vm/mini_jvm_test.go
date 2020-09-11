@@ -305,3 +305,16 @@ func TestObjectLoading(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+func TestReflection(t *testing.T) {
+	miniJvm, err := NewMiniJvm("com.fh.ReflectionTest", []string{"../testcase/classes", "../mini-lib/classes", rtJarPath})
+	if nil != err {
+		t.Fatal(err)
+	}
+
+	err = miniJvm.Start()
+	if nil != err {
+		t.Fatal(err)
+	}
+
+}

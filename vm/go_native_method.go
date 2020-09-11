@@ -3,6 +3,7 @@ package vm
 import (
 	"fmt"
 	"github.com/wanghongfei/mini-jvm/vm/class"
+	"strings"
 	"sync"
 )
 
@@ -61,4 +62,36 @@ func ObjectClone(args ...interface{}) interface{} {
 	}
 
 	return newRef
+}
+
+// Object.getClass()实现
+func ObjectGetClass(args ...interface{}) interface{} {
+	jvm := args[0].(*MiniJvm)
+
+	classDef, err := jvm.MethodArea.LoadClass("java/lang/Class")
+	if nil != err {
+		return fmt.Errorf("failed to load java/lang/Class def:%w", err)
+	}
+
+	classRef, err := class.NewObject(classDef, jvm.MethodArea)
+	if nil != err {
+		return fmt.Errorf("failed to create java/lang/Class object:%w", err)
+	}
+
+	return classRef
+}
+
+// Class.getName0()实现
+func ClassGetName0(args ...interface{}) interface{} {
+	jvm := args[0].(*MiniJvm)
+	ref := args[1].(*class.Reference)
+	className := ref.Object.DefFile.FullClassName
+	className = strings.ReplaceAll(className, "/", ".")
+
+	stringRef, err := class.NewStringObject([]rune(className), jvm.MethodArea)
+	if nil != err {
+		return fmt.Errorf("failed to create java/lang/String object:%w", err)
+	}
+
+	return stringRef
 }

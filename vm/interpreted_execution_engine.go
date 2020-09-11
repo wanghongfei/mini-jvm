@@ -4,10 +4,12 @@ import (
 	"bytes"
 	"encoding/binary"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"github.com/wanghongfei/mini-jvm/vm/accflag"
 	"github.com/wanghongfei/mini-jvm/vm/bcode"
 	"github.com/wanghongfei/mini-jvm/vm/class"
+	"reflect"
 	"sync"
 )
 
@@ -40,7 +42,7 @@ func (i *InterpretedExecutionEngine) ExecuteWithFrame(def *class.DefFile, method
 	// 是native方法
 	if _, ok := flagMap[accflag.Native]; ok {
 		// 查本地方法表
-		nativeFunc, argCount := i.miniJvm.NativeMethodTable.FindMethod(def.FullClassName, methodName, methodDescriptor)
+		nativeFunc, methodArgCount := i.miniJvm.NativeMethodTable.FindMethod(def.FullClassName, methodName, methodDescriptor)
 		if nil == nativeFunc {
 			// 该本地方法尚未被支持
 			return fmt.Errorf("unsupported native method '%s'", method)
@@ -48,27 +50,33 @@ func (i *InterpretedExecutionEngine) ExecuteWithFrame(def *class.DefFile, method
 
 		// 调用本地方法时, 固定第一个参数时JVM指针
 		nativeSpecialArgJvm := i.miniJvm
-		// 第二个参数时方法接收者
+		// 第二个参数是方法接收者
 		var nativeSpecialArgReceiver interface{}
 
 		// 是否为static方法
 		_, isStatic := flagMap[accflag.Static]
 		if !isStatic {
 			// 取出this引用
-			obj, _ := lastFrame.opStack.GetTopObject()
-			nativeSpecialArgReceiver = obj
+			if 0 == methodArgCount {
+				// 方法没有参数, 此时栈顶是接收者引用
+				nativeSpecialArgReceiver, _ = lastFrame.opStack.PopReference()
+			}
+			//obj, _ := lastFrame.opStack.GetTopObject()
+			//nativeSpecialArgReceiver = obj
 
 		} else {
 			// 接收者是class本身
 			nativeSpecialArgReceiver = def
 		}
 
-		// 从操作数栈取出argCount个参数
-		argCount += 2
-		args := make([]interface{}, 0, argCount)
-		for ix := 0; ix < argCount; ix++ {
+		// 构造参数数组, 长度是方法参数个数 + 2
+		argCount := methodArgCount + 2
+		args := make([]interface{}, argCount)
+		// 从操作数栈取出methodCount个参数
+		for ix := 0; ix < methodArgCount; ix++ {
 			arg, _ := lastFrame.opStack.Pop()
-			args = append(args, arg)
+			args[ix] = arg
+			// args = append(args, arg)
 		}
 
 		// 填充前2个固定参数
@@ -210,6 +218,8 @@ func (i *InterpretedExecutionEngine) executeInFrame(def *class.DefFile, codeAttr
 
 		// 执行
 		switch byteCode {
+		case bcode.Aconstnull:
+			frame.opStack.Push(nil)
 		case bcode.Iconst0:
 			// 将x压栈
 			frame.opStack.Push(0)
@@ -369,20 +379,24 @@ func (i *InterpretedExecutionEngine) executeInFrame(def *class.DefFile, codeAttr
 		case bcode.Ldc:
 			// 将int、float或String类型常量值从常量池中推送至栈顶
 			// format: ldc byte
-
-			// 取出常量池数据项
-			strConst := def.ConstPool[codeAttr.Code[frame.pc + 1]].(*class.StringInfoConst)
-			frame.pc++
-			// 取出string字面值
-			strVal := def.ConstPool[strConst.StringIndex].(*class.Utf8InfoConst).String()
-
-			strRef, err := class.NewStringObject([]rune(strVal), i.miniJvm.MethodArea)
+			err := i.bcodeLdc(def, frame, codeAttr)
 			if nil != err {
-				return fmt.Errorf("failed to execute 'ldc':%w", err)
+				return fmt.Errorf("failed to execute 'ldc': %w", err)
 			}
 
-			// 入栈
-			frame.opStack.Push(strRef)
+			//// 取出常量池数据项
+			//strConst := def.ConstPool[codeAttr.Code[frame.pc + 1]].(*class.StringInfoConst)
+			//frame.pc++
+			//// 取出string字面值
+			//strVal := def.ConstPool[strConst.StringIndex].(*class.Utf8InfoConst).String()
+			//
+			//strRef, err := class.NewStringObject([]rune(strVal), i.miniJvm.MethodArea)
+			//if nil != err {
+			//	return fmt.Errorf("failed to execute 'ldc':%w", err)
+			//}
+			//
+			//// 入栈
+			//frame.opStack.Push(strRef)
 
 
 		case bcode.Dup:
@@ -520,6 +534,66 @@ func (i *InterpretedExecutionEngine) executeInFrame(def *class.DefFile, codeAttr
 			if nil != err {
 				return fmt.Errorf("failed to execute 'ificmpne': %w", err)
 			}
+		case bcode.Ifacmpne:
+			// 比较栈顶两个引用不相等, 不相等就跳转
+			x, _ := frame.opStack.Pop()
+			y, _ := frame.opStack.Pop()
+
+			// 跳转的偏移量
+			twoByteNum := codeAttr.Code[frame.pc + 1 : frame.pc + 1 + 2]
+			var offset int16
+			err := binary.Read(bytes.NewBuffer(twoByteNum), binary.BigEndian, &offset)
+			if nil != err {
+				return fmt.Errorf("failed to read offset for if_icmpgt: %w", err)
+			}
+
+			if x != y {
+				frame.pc = frame.pc + int(offset) - 1
+
+			} else {
+				frame.pc += 2
+			}
+
+		case bcode.Ifnonnull:
+			// Operand Stack
+			//..., value →
+			x, _ := frame.opStack.Pop()
+
+			// 跳转的偏移量
+			twoByteNum := codeAttr.Code[frame.pc + 1 : frame.pc + 1 + 2]
+			var offset int16
+			err := binary.Read(bytes.NewBuffer(twoByteNum), binary.BigEndian, &offset)
+			if nil != err {
+				return fmt.Errorf("failed to read offset for if_icmpgt: %w", err)
+			}
+
+			if !reflect.ValueOf(x).IsNil() {
+				frame.pc = frame.pc + int(offset) - 1
+
+			} else {
+				frame.pc += 2
+			}
+
+		case bcode.Ifacmpeq:
+			// 比较栈顶两个引用相等, 相等就跳转
+			x, _ := frame.opStack.Pop()
+			y, _ := frame.opStack.Pop()
+
+			// 跳转的偏移量
+			twoByteNum := codeAttr.Code[frame.pc + 1 : frame.pc + 1 + 2]
+			var offset int16
+			err := binary.Read(bytes.NewBuffer(twoByteNum), binary.BigEndian, &offset)
+			if nil != err {
+				return fmt.Errorf("failed to read offset for if_icmpgt: %w", err)
+			}
+
+			if x == y {
+				frame.pc = frame.pc + int(offset) - 1
+
+			} else {
+				frame.pc += 2
+			}
+
 
 		case bcode.Isub:
 			// ..., value1, value2 →
@@ -964,6 +1038,54 @@ func (i *InterpretedExecutionEngine) invokeInterface(def *class.DefFile, frame *
 	// 出栈取出对象引用
 	ref, _ := frame.opStack.GetUntilObject()
 	return i.ExecuteWithFrame(ref.Object.DefFile, targetMethodName, targetDescriptor, frame)
+}
+
+func (i *InterpretedExecutionEngine) bcodeLdc(def *class.DefFile, frame *MethodStackFrame, codeAttr *class.CodeAttr) error {
+	// 将int、float,String或者class从常量池中推送至栈顶
+	// format: ldc byte
+
+	// 取出常量池数据项
+	constItem := def.ConstPool[codeAttr.Code[frame.pc + 1]]
+	var resultRef *class.Reference
+	switch constItem.(type) {
+	case *class.StringInfoConst:
+		// 是string类型, 构造string对象后入栈
+		strConst := def.ConstPool[codeAttr.Code[frame.pc + 1]].(*class.StringInfoConst)
+		frame.pc++
+		// 取出string字面值
+		strVal := def.ConstPool[strConst.StringIndex].(*class.Utf8InfoConst).String()
+
+		strRef, err := class.NewStringObject([]rune(strVal), i.miniJvm.MethodArea)
+		if nil != err {
+			return fmt.Errorf("failed to execute 'ldc':%w", err)
+		}
+
+		resultRef = strRef
+
+
+	case *class.ClassInfoConstInfo:
+		frame.pc++
+
+		// 是class类型, 构造class实例后入栈
+		classDef, err := i.miniJvm.MethodArea.LoadClass("java/lang/Class")
+		if nil != err {
+			return fmt.Errorf("failed to load java/lang/Class def:%w", err)
+		}
+
+		classRef, err := class.NewObject(classDef, i.miniJvm.MethodArea)
+		if nil != err {
+			return fmt.Errorf("failed to create java/lang/Class object:%w", err)
+		}
+
+		resultRef = classRef
+
+	default:
+		return errors.New("unsupported const pool type " + reflect.TypeOf(constItem).String())
+	}
+
+	// 入栈
+	frame.opStack.Push(resultRef)
+	return nil
 }
 
 // 解释athrow指令

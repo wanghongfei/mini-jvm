@@ -27,5 +27,10 @@ func (f *MethodStackFrame) GetLocalTableIntAt(index int) int {
 }
 
 func (f *MethodStackFrame) GetLocalTableObjectAt(index int) *class.Reference {
-	return f.localVariablesTable[index].(*class.Reference)
+	elem := f.localVariablesTable[index]
+	if nil == elem {
+		return nil
+	}
+
+	return elem.(*class.Reference)
 }

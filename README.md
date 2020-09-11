@@ -75,6 +75,7 @@ var rtJarPath = "/Library/Java/JavaVirtualMachines/jdk1.8.0_181.jdk/Contents/Hom
 ```go
 const (
 	Nop byte = 0x00
+	Aconstnull = 0x01
 
 	Iconst0 = 0x03
 	Iconst1 = 0x04
@@ -151,6 +152,8 @@ const (
 	Ificmpge = 0xa2
 	Ificmpgt = 0xa3
 	Ificmple = 0xa4
+	Ifacmpeq = 0xa5
+	Ifacmpne = 0xa6
 	Goto = 0xa7
 
 	Areturn = 0xb0
@@ -174,6 +177,7 @@ const (
 	Ireturn = 0xac
 
 	Wide = 0xc4
+	Ifnonnull = 0xc7
 )
 ```
 

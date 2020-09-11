@@ -78,6 +78,8 @@ func NewMiniJvm(mainClass string, classPaths []string, cmdArgs... string) (*Mini
 
 	nativeMethodTable.RegisterMethod("java.lang.Object", "hashCode", "()I", ObjectHashCode)
 	nativeMethodTable.RegisterMethod("java.lang.Object", "clone", "()Ljava/lang/Object;", ObjectClone)
+	nativeMethodTable.RegisterMethod("java.lang.Object", "getClass", "()Ljava/lang/Class;", ObjectGetClass)
+	nativeMethodTable.RegisterMethod("java.lang.Class", "getName0", "()Ljava/lang/String;", ClassGetName0)
 
 	return vm, nil
 }
