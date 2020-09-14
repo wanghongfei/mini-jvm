@@ -63,7 +63,8 @@ func (c *DefFile) ReadAttr(reader io.Reader) (interface{}, error) {
 		"Signature" == attrName ||
 		"Deprecated" == attrName ||
 		"RuntimeVisibleAnnotations" == attrName ||
-		"Exceptions" == attrName {
+		"Exceptions" == attrName ||
+		"BootstrapMethods" == attrName {
 		// 跳过此属性
 		err := c.skipAttr(reader)
 		if nil != err {

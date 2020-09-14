@@ -73,13 +73,23 @@ func NewMiniJvm(mainClass string, classPaths []string, cmdArgs... string) (*Mini
 	nativeMethodTable.RegisterMethod("cn.minijvm.io.Printer", "printInt2", "(II)V", PrintInt2)
 	nativeMethodTable.RegisterMethod("cn.minijvm.io.Printer", "printChar", "(C)V", PrintChar)
 	nativeMethodTable.RegisterMethod("cn.minijvm.io.Printer", "printString", "(Ljava/lang/String;)V", PrintString)
+	nativeMethodTable.RegisterMethod("cn.minijvm.io.Printer", "printBool", "(Z)V", PrintBoolean)
+
 	nativeMethodTable.RegisterMethod("cn.minijvm.concurrency.MiniThread", "start", "(Ljava/lang/Runnable;)V", ExecuteInThread)
 	nativeMethodTable.RegisterMethod("cn.minijvm.concurrency.MiniThread", "sleepCurrentThread", "(I)V", ThreadSleep)
 
 	nativeMethodTable.RegisterMethod("java.lang.Object", "hashCode", "()I", ObjectHashCode)
 	nativeMethodTable.RegisterMethod("java.lang.Object", "clone", "()Ljava/lang/Object;", ObjectClone)
 	nativeMethodTable.RegisterMethod("java.lang.Object", "getClass", "()Ljava/lang/Class;", ObjectGetClass)
+
 	nativeMethodTable.RegisterMethod("java.lang.Class", "getName0", "()Ljava/lang/String;", ClassGetName0)
+	nativeMethodTable.RegisterMethod("java.lang.Class", "isInterface", "()Z", ClassIsInterface)
+	nativeMethodTable.RegisterMethod("java.lang.Class", "isPrimitive", "()Z", ClassIsPrimitive)
+
+	//public static native void arraycopy(Object src,  int  srcPos,
+	//	Object dest, int destPos,
+	//	int length);
+	nativeMethodTable.RegisterMethod("java.lang.System", "arraycopy", "(Ljava/lang/Object;ILjava/lang/Object;II)V", SystemArrayCopy)
 
 	return vm, nil
 }

@@ -21,6 +21,7 @@ Mini-JVM首先会从`classpath`中加载主类的class文件，然后找到main�
 - 部分继承特性(字段继承、方法继承)
 - 非标准库Thread类的线程支持
 - synchronized关键字同步支持
+- 支持部分Class方法，如toString(), getName(), isPrimitive()
 
 
 
@@ -131,11 +132,14 @@ const (
 
 	Aastore = 0x53
 	Castore = 0x55
+	Pop = 0x57
 
 	Dup = 0x59
 
 	Iadd = 0x60
 	Isub = 0x64
+
+	Ishl = 0x78
 
 	Iinc = 0x84
 

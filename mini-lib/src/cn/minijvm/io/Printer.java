@@ -5,4 +5,5 @@ public class Printer {
     public static native void printInt2(int num1, int num2);
     public static native void printChar(char ch);
     public static native void printString(String str);
+    public static native void printBool(boolean b);
 }

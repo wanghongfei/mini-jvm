@@ -330,6 +330,28 @@ func readConstPool(bufReader io.Reader, cpCount int) ([]interface{}, error) {
 			}
 			cpInfos = append(cpInfos, info)
 
+		case 15:
+			info, err := ReadMethodHandleConst(bufReader, tag)
+			if nil != err {
+				return nil, err
+			}
+			cpInfos = append(cpInfos, info)
+
+		case 16:
+			info, err := ReadMethodTypeConst(bufReader, tag)
+			if nil != err {
+				return nil, err
+			}
+			cpInfos = append(cpInfos, info)
+
+		case 18:
+			info, err := ReadInvokeDynamicConst(bufReader, tag)
+			if nil != err {
+				return nil, err
+			}
+			cpInfos = append(cpInfos, info)
+
+
 
 		default:
 			return nil, fmt.Errorf("invalid cp tag %d", tag)

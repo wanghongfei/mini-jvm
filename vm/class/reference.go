@@ -2,6 +2,7 @@ package class
 
 import (
 	"fmt"
+	"github.com/wanghongfei/mini-jvm/utils"
 	"math/rand"
 	"strings"
 	"sync"
@@ -102,14 +103,24 @@ func allocateFields(def *DefFile, fields map[string]*ObjectField) error {
 			f.FieldType = "int"
 			f.FieldValue = 0
 
+		} else if "D" == descriptor {
+			// double
+			f.FieldType = "float64"
+			f.FieldValue = 0.00
+
+
 		} else if "C" == descriptor {
 			// char
 			f.FieldType = "char"
 			f.FieldValue = 'a'
 
 		} else if "[C" == descriptor {
-			f.FieldType = "[]rune"
-			f.FieldValue = make([]rune, 0)
+			// 分配Reference.Array
+			ref, _ := NewArray(0, 5)
+			// f.FieldType = "[]rune"
+			f.FieldType = "array"
+			// f.FieldValue = make([]rune, 0)
+			f.FieldValue = ref
 
 		} else if "J" == descriptor {
 			f.FieldType = "long"
@@ -159,10 +170,20 @@ func NewStringObject(val []rune, cl Loader) (*Reference, error) {
 	}
 
 	// 给value和hash这两个最重要的字段赋值
+	//obj.ObjectFields["value"] = &ObjectField{
+	//	FieldValue: val,
+	//	FieldType:  "[]rune",
+	//}
+
+	// value
+	valueArrayRef, _ := NewArray(len(val), 5)
+	utils.FillInterfaceArrayRune(valueArrayRef.Array.Data, val)
+
 	obj.ObjectFields["value"] = &ObjectField{
-		FieldValue: val,
-		FieldType:  "[]rune",
+		FieldValue: valueArrayRef,
+		FieldType:  "array",
 	}
+	// hash
 	obj.ObjectFields["hash"] = &ObjectField{
 		FieldValue: 0,
 		FieldType:  "int",
@@ -193,32 +214,64 @@ func ParseMethodDescriptor(descriptor string) ([]string, string) {
 	// 遍历模式
 	// 0: 正常模式
 	// 1: L模式(解析对象全名, Lxx/xxx/xx;)
+	// todo 2: 数组模式, [C
+	// todo 21: 数组+对象模式, [Lxx/xxx/xx;
 	mode := 0
-	// sum := 0
 	classStartIndex := -1
+	arrayStartIndex := -1
 	for ix, ch := range argDesc {
 		// 解析出一个class类型
-		if 1 == mode {
+		if 1 == mode || 21 == mode {
 			// 处于class解析状态
 			if ';' == ch {
-				// sum++
-				mode = 0
+				if 21 == mode {
+					argList = append(argList, argDesc[arrayStartIndex:ix])
+					arrayStartIndex = -1
 
-				argList = append(argList, argDesc[classStartIndex:ix])
-				classStartIndex = -1
+				} else {
+					argList = append(argList, argDesc[classStartIndex:ix])
+					classStartIndex = -1
+				}
+
+				mode = 0
 			}
 
 			continue
 		}
 
 		if 'L' == ch {
-			mode = 1
+			if 2 == mode {
+				// 进入数组对象模式
+				mode = 21
+
+			} else {
+				mode = 1
+			}
+
 			classStartIndex = ix
 			continue
 		}
 
+		// 进入数组模式
+		if '[' == ch {
+			mode = 2
+			arrayStartIndex = ix
+
+			continue
+		}
+
+		// 执行到这里还是数组模式, 说明是[C 这种情况
+		if 2 == mode {
+			argList = append(argList, argDesc[arrayStartIndex:ix + 1])
+			arrayStartIndex = -1
+
+			// 回到普通模式
+			mode = 0
+
+			continue
+		}
+
 		argList = append(argList, string(ch))
-		// sum++
 	}
 
 	return argList, retDesc

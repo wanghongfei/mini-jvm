@@ -10,6 +10,7 @@ const (
 	Bridge = 0x0040
 	Varargs = 0x0080
 	Native = 0x0100
+	Interface = 0x0200
 	Abstarct = 0x0400
 	Strict = 0x0800
 	Synthetic = 0x1000
@@ -46,6 +47,9 @@ func ParseAccFlags(flagBits uint16) map[int]interface{} {
 	}
 	if flagBits & Native > 0 {
 		flagMap[Native] = struct {}{}
+	}
+	if flagBits & Interface > 0 {
+		flagMap[Interface] = struct {}{}
 	}
 	if flagBits & Abstarct > 0 {
 		flagMap[Abstarct] = struct {}{}

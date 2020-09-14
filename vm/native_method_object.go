@@ -3,38 +3,8 @@ package vm
 import (
 	"fmt"
 	"github.com/wanghongfei/mini-jvm/vm/class"
-	"strings"
 	"sync"
 )
-
-func PrintInt(args ...interface{}) interface{} {
-	fmt.Println(args[2])
-
-	return nil
-}
-
-func PrintInt2(args ...interface{}) interface{} {
-	fmt.Println(args[2])
-	fmt.Println(args[3])
-
-	return nil
-}
-
-func PrintChar(args ...interface{}) interface{} {
-	fmt.Printf("%c\n", args[2])
-
-	return nil
-}
-
-func PrintString(args ...interface{}) interface{} {
-	strRef := args[2].(*class.Reference)
-	field := strRef.Object.ObjectFields["value"]
-	strVal := field.FieldValue.([]rune)
-
-	fmt.Printf("%v\n", string(strVal))
-
-	return nil
-}
 
 // Object.hashcode()方法实现
 // return: int
@@ -81,17 +51,3 @@ func ObjectGetClass(args ...interface{}) interface{} {
 	return classRef
 }
 
-// Class.getName0()实现
-func ClassGetName0(args ...interface{}) interface{} {
-	jvm := args[0].(*MiniJvm)
-	ref := args[1].(*class.Reference)
-	className := ref.Object.DefFile.FullClassName
-	className = strings.ReplaceAll(className, "/", ".")
-
-	stringRef, err := class.NewStringObject([]rune(className), jvm.MethodArea)
-	if nil != err {
-		return fmt.Errorf("failed to create java/lang/String object:%w", err)
-	}
-
-	return stringRef
-}

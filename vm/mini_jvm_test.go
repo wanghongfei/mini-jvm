@@ -1,6 +1,7 @@
 package vm
 
 import (
+	"github.com/wanghongfei/mini-jvm/utils"
 	"github.com/wanghongfei/mini-jvm/vm/class"
 	"testing"
 )
@@ -287,8 +288,14 @@ func TestString(t *testing.T) {
 	}
 
 	// assert
-	val := miniJvm.DebugPrintHistory[0].(*class.Reference).Object.ObjectFields["value"].FieldValue.([]rune)
-	if "hello, 世界" != string(val) {
+	arrRef := miniJvm.DebugPrintHistory[0].(*class.Reference).Object.ObjectFields["value"].FieldValue.(*class.Reference)
+	runeArr := utils.InterfaceArrayToRuneArray(arrRef.Array.Data)
+	if "hello, 世界" != string(runeArr) {
+		t.FailNow()
+	}
+	arrRef = miniJvm.DebugPrintHistory[1].(*class.Reference).Object.ObjectFields["value"].FieldValue.(*class.Reference)
+	runeArr = utils.InterfaceArrayToRuneArray(arrRef.Array.Data)
+	if "数字战斗模拟" != string(runeArr) {
 		t.FailNow()
 	}
 
@@ -315,6 +322,23 @@ func TestReflection(t *testing.T) {
 	err = miniJvm.Start()
 	if nil != err {
 		t.Fatal(err)
+	}
+
+	// asset
+	arrRef := miniJvm.DebugPrintHistory[0].(*class.Reference).Object.ObjectFields["value"].FieldValue.(*class.Reference)
+	runeArr := utils.InterfaceArrayToRuneArray(arrRef.Array.Data)
+	if "java.lang.Class" != string(runeArr) {
+		t.FailNow()
+	}
+	arrRef = miniJvm.DebugPrintHistory[1].(*class.Reference).Object.ObjectFields["value"].FieldValue.(*class.Reference)
+	runeArr = utils.InterfaceArrayToRuneArray(arrRef.Array.Data)
+	if "java.lang.Class" != string(runeArr) {
+		t.FailNow()
+	}
+	arrRef = miniJvm.DebugPrintHistory[4].(*class.Reference).Object.ObjectFields["value"].FieldValue.(*class.Reference)
+	runeArr = utils.InterfaceArrayToRuneArray(arrRef.Array.Data)
+	if "class java.lang.Class" != string(runeArr) {
+		t.FailNow()
 	}
 
 }
