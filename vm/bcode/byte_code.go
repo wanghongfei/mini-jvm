@@ -1,5 +1,7 @@
 package bcode
 
+import "encoding/hex"
+
 const (
 	Nop byte = 0x00
 	Aconstnull = 0x01
@@ -58,11 +60,14 @@ const (
 
 	Aastore = 0x53
 	Castore = 0x55
+	Pop = 0x57
 
 	Dup = 0x59
 
 	Iadd = 0x60
 	Isub = 0x64
+
+	Ishl = 0x78
 
 	Iinc = 0x84
 
@@ -106,3 +111,193 @@ const (
 	Wide = 0xc4
 	Ifnonnull = 0xc7
 )
+
+func ToName(code byte) string {
+	switch code {
+	case Aconstnull:
+		return "aconstnull"
+
+	case Iconst0:
+		return "iconst_0"
+	case Iconst1:
+		return "iconst_1"
+	case Iconst2:
+		return "iconst_2"
+	case Iconst3:
+		return "iconst_3"
+	case Iconst4:
+		return "iconst_4"
+	case Iconst5:
+		return "iconst_5"
+
+	case Ldc:
+		return "ldc"
+
+	case Iaload:
+		return "iaload"
+	case Aaload:
+		return "aaload"
+	case Caload:
+		return "caload"
+
+	case Istore0:
+		return "istore_0"
+	case Istore1:
+		return "istore_1"
+	case Istore2:
+		return "istore_2"
+	case Istore3:
+		return "istore_3"
+
+	case Bipush:
+		return "bipush"
+	case Sipush:
+		return "sipush"
+
+	case Iload:
+		return "iload"
+	case Iload0:
+		return "iload_0"
+	case Iload1:
+		return "iload_1"
+	case Iload2:
+		return "iload_2"
+	case Iload3:
+		return "iload_3"
+
+	case Aload:
+		return "aload"
+	case Aload0:
+		return "aload_0"
+	case Aload1:
+		return "aload_1"
+	case Aload2:
+		return "aload_2"
+	case Aload3:
+		return "aload_3"
+
+	case Getstatic:
+		return "getstatic"
+	case Putstatic:
+		return "putstatic"
+
+	case Athrow:
+		return "athrow"
+
+	case Monitorenter:
+		return "monitorenter"
+	case Monitorexit:
+		return "monitorexit"
+
+	case Istore:
+		return "istore"
+
+	case Lstore1:
+		return "lstore_1"
+
+	case Astore:
+		return "astore"
+	case Astore0:
+		return "astore_0"
+	case Astore1:
+		return "astore_1"
+	case Astore2:
+		return "astore_2"
+	case Astore3:
+		return "astore_3"
+
+	case Iastore:
+		return "iastore"
+	case Aastore:
+		return "aastore"
+	case Castore:
+		return "castore"
+
+	case Pop:
+		return "pop"
+	case Dup:
+		return "dup"
+
+	case Iadd:
+		return "iadd"
+	case Isub:
+		return "isub"
+	case Ishl:
+		return "ishl"
+	case Iinc:
+		return "iinc"
+
+	case Ifeq:
+		return "ifeq"
+	case Ifne:
+		return "ifne"
+	case Iflt:
+		return "iflt"
+	case Ifge:
+		return "ifge"
+	case Ifgt:
+		return "ifgt"
+	case Ifle:
+		return "ifle"
+	case Ificmpeq:
+		return "ificmpeq"
+	case Ificmpne:
+		return "ificmpne"
+	case Ificmplt:
+		return "ificmplt"
+	case Ificmpgt:
+		return "ificmpgt"
+	case Ificmpge:
+		return "ificmpge"
+	case Ificmple:
+		return "ificmple"
+	case Ifacmpeq:
+		return "ifacmpeq"
+	case Ifacmpne:
+		return "ifacmpne"
+
+	case Goto:
+		return "goto"
+
+	case Areturn:
+		return "areturn"
+	case Return:
+		return "return"
+
+	case GetField:
+		return "getfield"
+	case Putfield:
+		return "putfield"
+
+	case Newarray:
+		return "newarray"
+	case Anewarray:
+		return "anewarray"
+
+	case Invokevirtual:
+		return "invokevirtual"
+	case Invokespecial:
+		return "invokespecial"
+	case Invokestatic:
+		return "invokestatic"
+	case Invokeinterface:
+		return "invokeinterface"
+
+	case New:
+		return "new"
+	case Arraylength:
+		return "arraylength"
+
+	case Ireturn:
+		return "ireturn"
+
+	case Wide:
+		return "wide"
+
+	case Ifnonnull:
+		return "ifnonnull"
+
+	default:
+		return "unknown: " + hex.EncodeToString([]byte{code})
+	}
+}

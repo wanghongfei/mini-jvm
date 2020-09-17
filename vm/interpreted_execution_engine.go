@@ -10,6 +10,7 @@ import (
 	"github.com/wanghongfei/mini-jvm/vm/bcode"
 	"github.com/wanghongfei/mini-jvm/vm/class"
 	"reflect"
+	"strings"
 	"sync"
 )
 
@@ -29,6 +30,8 @@ func (i *InterpretedExecutionEngine) ExecuteWithDescriptor(def *class.DefFile, m
 }
 
 func (i *InterpretedExecutionEngine) ExecuteWithFrame(def *class.DefFile, methodName string, methodDescriptor string, lastFrame *MethodStackFrame) error {
+	// fmt.Printf("[DEBUG] %v: %v\n", methodName, methodDescriptor)
+
 	// 查找方法
 	method, err := i.findMethod(def, methodName, methodDescriptor)
 	if nil != err {
@@ -88,7 +91,9 @@ func (i *InterpretedExecutionEngine) ExecuteWithFrame(def *class.DefFile, method
 			args[ix], args[argCount - 1 - ix] = args[argCount - 1 - ix], args[ix]
 		}
 
-		i.miniJvm.DebugPrintHistory = append(i.miniJvm.DebugPrintHistory, args[2:]...)
+		if strings.HasPrefix(methodName, "print") {
+			i.miniJvm.DebugPrintHistory = append(i.miniJvm.DebugPrintHistory, args[2:]...)
+		}
 
 		// 调用go函数
 		funcRet := nativeFunc(args...)
@@ -153,7 +158,7 @@ func (i *InterpretedExecutionEngine) ExecuteWithFrame(def *class.DefFile, method
 		// 按参数数量出栈, 取出参数
 		for _, arg := range argDespList {
 			// 是int/char参数
-			if "I" == arg || "C" == arg || "Ljava/lang/String" == arg {
+			if "I" == arg || "C" == arg || "Ljava/lang/String" == arg || "[C" == arg {
 				// 从上一个栈帧中出栈, 保存到新栈帧的localVarTable中
 				op, _ := lastFrame.opStack.Pop()
 				argList = append(argList, op)
@@ -205,14 +210,16 @@ func (i *InterpretedExecutionEngine) ExecuteWithFrame(def *class.DefFile, method
 
 
 	// 执行字节码
-	return i.executeInFrame(def, codeAttr, frame, lastFrame)
+	return i.executeInFrame(def, codeAttr, frame, lastFrame, methodName, methodDescriptor)
 }
 
-func (i *InterpretedExecutionEngine) executeInFrame(def *class.DefFile, codeAttr *class.CodeAttr, frame *MethodStackFrame, lastFrame *MethodStackFrame) error {
+func (i *InterpretedExecutionEngine) executeInFrame(def *class.DefFile, codeAttr *class.CodeAttr, frame *MethodStackFrame, lastFrame *MethodStackFrame, methodName string, methodDescriptor string) error {
+
 	isWideStatus := false
 	for {
 		// 取出pc指向的字节码
 		byteCode := codeAttr.Code[frame.pc]
+		// fmt.Printf("[DEBUG] byte code: %v\n", bcode.ToName(byteCode))
 
 		exitLoop := false
 
@@ -375,6 +382,9 @@ func (i *InterpretedExecutionEngine) executeInFrame(def *class.DefFile, codeAttr
 			arrIndex, _ := frame.opStack.PopInt()
 			arrRef, _ := frame.opStack.PopReference()
 			arrRef.Array.Data[arrIndex] = val
+
+		case bcode.Pop:
+			frame.opStack.Pop()
 
 		case bcode.Ldc:
 			// 将int、float或String类型常量值从常量池中推送至栈顶
@@ -604,6 +614,24 @@ func (i *InterpretedExecutionEngine) executeInFrame(def *class.DefFile, codeAttr
 
 			frame.opStack.Push(val)
 
+		case bcode.Ishl:
+			// Operand Stack
+			//..., value1, value2 →
+			//
+			//..., result
+
+			// Both value1 and value2 must be of type int.
+			// The values are popped from the operand stack.
+			// An int result is calculated by shifting value1 left by s bit positions,
+			// where s is the value of the low 5 bits of value2.
+			// The result is pushed onto the operand stack.
+			val2, _ := frame.opStack.PopInt()
+			val1, _ := frame.opStack.PopInt()
+
+			shift := val2 & 0x1bb
+			val1 = val1 << shift
+
+			frame.opStack.Push(val1)
 
 		case bcode.Iinc:
 			// 将第op1个slot的变量增加op2
@@ -645,6 +673,9 @@ func (i *InterpretedExecutionEngine) executeInFrame(def *class.DefFile, codeAttr
 			//..., arrayref →
 			//..., length
 			arrRef, _ := frame.opStack.PopReference()
+			if nil == arrRef.Array {
+				fmt.Println("nil")
+			}
 			val := len(arrRef.Array.Data)
 			frame.opStack.Push(val)
 
@@ -785,7 +816,8 @@ func (i *InterpretedExecutionEngine) executeInFrame(def *class.DefFile, codeAttr
 			targetObjRef, _ := frame.opStack.PopReference()
 
 			// 读取
-			val := targetObjRef.Object.ObjectFields[fieldName].FieldValue
+			field := targetObjRef.Object.ObjectFields[fieldName]
+			val := field.FieldValue
 			// 压栈
 			frame.opStack.Push(val)
 
@@ -1046,7 +1078,7 @@ func (i *InterpretedExecutionEngine) bcodeLdc(def *class.DefFile, frame *MethodS
 
 	// 取出常量池数据项
 	constItem := def.ConstPool[codeAttr.Code[frame.pc + 1]]
-	var resultRef *class.Reference
+	var resultRef interface{}
 	switch constItem.(type) {
 	case *class.StringInfoConst:
 		// 是string类型, 构造string对象后入栈
@@ -1078,6 +1110,13 @@ func (i *InterpretedExecutionEngine) bcodeLdc(def *class.DefFile, frame *MethodS
 		}
 
 		resultRef = classRef
+
+	case *class.IntegerInfoConst:
+		frame.pc++
+
+		intConst := constItem.(*class.IntegerInfoConst)
+		resultRef = int(intConst.Bytes)
+
 
 	default:
 		return errors.New("unsupported const pool type " + reflect.TypeOf(constItem).String())

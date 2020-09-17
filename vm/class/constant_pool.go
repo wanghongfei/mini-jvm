@@ -119,6 +119,72 @@ func ReadNameAndTypeConst(reader io.Reader, tag uint8) (*NameAndTypeConst, error
 	return cpInfo, nil
 }
 
+type MethodTypeConst struct {
+	Tag uint8
+	DescriptorIndex uint16
+
+}
+func ReadMethodTypeConst(reader io.Reader, tag uint8) (*MethodTypeConst, error) {
+	cpInfo := new(MethodTypeConst)
+	cpInfo.Tag = tag
+
+	idx, err := utils.ReadInt16(reader)
+	if nil != err {
+		return nil, err
+	}
+	cpInfo.DescriptorIndex = idx
+
+	return cpInfo, nil
+}
+
+type MethodHandleConst struct {
+	Tag uint8
+	ReferenceKind uint8
+	ReferenceIndex uint16
+}
+func ReadMethodHandleConst(reader io.Reader, tag uint8) (*MethodHandleConst, error) {
+	cpInfo := new(MethodHandleConst)
+	cpInfo.Tag = tag
+
+	kind, err := utils.ReadInt8(reader)
+	if nil != err {
+		return nil, err
+	}
+	cpInfo.ReferenceKind = kind
+
+	idx, err := utils.ReadInt16(reader)
+	if nil != err {
+		return nil, err
+	}
+	cpInfo.ReferenceIndex = idx
+
+	return cpInfo, nil
+}
+
+type InvokeDynamicConst struct {
+	Tag uint8
+	BootstrapMethodAttrIndex uint16
+	NameAndTypeIndex uint16
+}
+func ReadInvokeDynamicConst(reader io.Reader, tag uint8) (*InvokeDynamicConst, error) {
+	cpInfo := new(InvokeDynamicConst)
+	cpInfo.Tag = tag
+
+	idx1, err := utils.ReadInt16(reader)
+	if nil != err {
+		return nil, err
+	}
+	cpInfo.BootstrapMethodAttrIndex = idx1
+
+	idx2, err := utils.ReadInt16(reader)
+	if nil != err {
+		return nil, err
+	}
+	cpInfo.NameAndTypeIndex = idx2
+
+	return cpInfo, nil
+}
+
 type StringInfoConst struct {
 	Tag uint8
 	StringIndex uint16
