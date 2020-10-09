@@ -50,7 +50,7 @@ func (t *MiniThread) Start() {
 			t.Status = THREAD_STATUS_FINISHED
 		}()
 
-		err := t.Jvm.ExecutionEngine.ExecuteWithFrame(t.JavaObjRef.Object.DefFile, "run", "()V", frame)
+		err := t.Jvm.ExecutionEngine.ExecuteWithFrame(t.JavaObjRef.Object.DefFile, "run", "()V", frame, false)
 		if nil != err {
 			fmt.Printf("failed to execute native function 'ExecuteInThread': %v\n", err)
 		}
