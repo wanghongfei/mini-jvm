@@ -44,6 +44,7 @@ type DefFile struct {
 	AttrCount uint16
 	Attrs []interface{}
 
+	// *** 以上是class文件原始数据 ***
 
 	// 类全名
 	FullClassName string
@@ -54,6 +55,17 @@ type DefFile struct {
 
 	// 锁, synchronized使用
 	Monitor sync.Mutex
+
+	// 虚方法表
+	VTable []*VTableItem
+}
+
+type VTableItem struct {
+	MethodName string
+	MethodDescriptor string
+
+	// 指向class元数据里的MethodInfo
+	MethodInfo *MethodInfo
 }
 
 func (c *DefFile) ExtractFullClassName() string {
@@ -128,7 +140,7 @@ func LoadClassBuf(buf []byte) (*DefFile, error) {
 		return nil, fmt.Errorf("failed to load access_flag, %w", err)
 	}
 
-	// 当期类在常量池的索引
+	// 当前类在常量池的索引
 	defFile.ThisClass, err = utils.ReadInt16(bufReader)
 	if nil != err {
 		return nil, fmt.Errorf("failed to load this_class, %w", err)
