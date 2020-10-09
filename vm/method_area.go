@@ -178,9 +178,10 @@ func (m *MethodArea) initVTable(def *class.DefFile) error {
 			flagMap := accflag.ParseAccFlags(methodInfo.AccessFlags)
 			_, isPublic := flagMap[accflag.Public]
 			_, isProtected := flagMap[accflag.Protected]
+			_, isNative := flagMap[accflag.Native]
 
-			// 只添加public, protected方法
-			if !isPublic && !isProtected {
+			// 只添加public, protected, native方法
+			if !isPublic && !isProtected && !isNative {
 				// 跳过
 				continue
 			}
@@ -225,7 +226,15 @@ func (m *MethodArea) initVTable(def *class.DefFile) error {
 	}
 
 	// 从父类虚方法表中继承元素
-	def.VTable = append(def.VTable, superDef.VTable...)
+	for _, superItem := range superDef.VTable {
+		subItem := &class.VTableItem{
+			MethodName:       superItem.MethodName,
+			MethodDescriptor: superItem.MethodDescriptor,
+			MethodInfo:       superItem.MethodInfo,
+		}
+
+		def.VTable = append(def.VTable, subItem)
+	}
 
 	// 遍历自己的方法元数据, 替换或者追加虚方法表
 	for _, methodInfo := range def.Methods {
@@ -241,8 +250,9 @@ func (m *MethodArea) initVTable(def *class.DefFile) error {
 		flagMap := accflag.ParseAccFlags(methodInfo.AccessFlags)
 		_, isPublic := flagMap[accflag.Public]
 		_, isProtected := flagMap[accflag.Protected]
-		// 只添加public, protected方法
-		if !isPublic && !isProtected {
+		_, isNative := flagMap[accflag.Native]
+		// 只添加public, protected, native方法
+		if !isPublic && !isProtected && !isNative {
 			// 跳过
 			continue
 		}

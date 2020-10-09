@@ -33,7 +33,7 @@ type ExecutionEngine interface {
 
 	ExecuteWithDescriptor(file *class.DefFile, methodName string, descriptor string) error
 
-	ExecuteWithFrame(file *class.DefFile, methodName string, descriptor string, frame *MethodStackFrame) error
+	ExecuteWithFrame(file *class.DefFile, methodName string, descriptor string, frame *MethodStackFrame, queryVTable bool) error
 }
 
 func NewMiniJvm(mainClass string, classPaths []string, cmdArgs... string) (*MiniJvm, error) {

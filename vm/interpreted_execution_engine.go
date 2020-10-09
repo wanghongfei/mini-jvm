@@ -22,18 +22,18 @@ type InterpretedExecutionEngine struct {
 }
 
 func (i *InterpretedExecutionEngine) Execute(def *class.DefFile, methodName string) error {
-	return i.ExecuteWithFrame(def, methodName, "([Ljava/lang/String;)V", nil)
+	return i.ExecuteWithFrame(def, methodName, "([Ljava/lang/String;)V", nil, false)
 }
 
 func (i *InterpretedExecutionEngine) ExecuteWithDescriptor(def *class.DefFile, methodName, descriptor string) error {
-	return i.ExecuteWithFrame(def, methodName, descriptor, nil)
+	return i.ExecuteWithFrame(def, methodName, descriptor, nil, false)
 }
 
-func (i *InterpretedExecutionEngine) ExecuteWithFrame(def *class.DefFile, methodName string, methodDescriptor string, lastFrame *MethodStackFrame) error {
+func (i *InterpretedExecutionEngine) ExecuteWithFrame(def *class.DefFile, methodName string, methodDescriptor string, lastFrame *MethodStackFrame, queryVTable bool) error {
 	// fmt.Printf("[DEBUG] %v: %v\n", methodName, methodDescriptor)
 
 	// 查找方法
-	method, err := i.findMethod(def, methodName, methodDescriptor)
+	method, err := i.findMethod(def, methodName, methodDescriptor, queryVTable)
 	if nil != err {
 		return fmt.Errorf("failed to find method: %w", err)
 	}
@@ -946,7 +946,7 @@ func (i *InterpretedExecutionEngine) invokeStatic(def *class.DefFile, frame *Met
 	}
 
 	// 调用
-	return i.ExecuteWithFrame(targetDef, methodName, descriptor, frame)
+	return i.ExecuteWithFrame(targetDef, methodName, descriptor, frame, false)
 }
 
 func (i *InterpretedExecutionEngine) invokeSpecial(def *class.DefFile, frame *MethodStackFrame, codeAttr *class.CodeAttr) error {
@@ -985,7 +985,7 @@ func (i *InterpretedExecutionEngine) invokeSpecial(def *class.DefFile, frame *Me
 	}
 
 	// 调用
-	return i.ExecuteWithFrame(targetDef, methodName, descriptor, frame)
+	return i.ExecuteWithFrame(targetDef, methodName, descriptor, frame, false)
 }
 
 func (i *InterpretedExecutionEngine) invokeVirtual(def *class.DefFile, frame *MethodStackFrame, codeAttr *class.CodeAttr) error {
@@ -1031,7 +1031,7 @@ func (i *InterpretedExecutionEngine) invokeVirtual(def *class.DefFile, frame *Me
 
 
 	// 调用
-	return i.ExecuteWithFrame(targetDef, methodName, descriptor, frame)
+	return i.ExecuteWithFrame(targetDef, methodName, descriptor, frame, true)
 }
 
 func (i *InterpretedExecutionEngine) invokeInterface(def *class.DefFile, frame *MethodStackFrame, codeAttr *class.CodeAttr) error {
@@ -1069,7 +1069,7 @@ func (i *InterpretedExecutionEngine) invokeInterface(def *class.DefFile, frame *
 
 	// 出栈取出对象引用
 	ref, _ := frame.opStack.GetUntilObject()
-	return i.ExecuteWithFrame(ref.Object.DefFile, targetMethodName, targetDescriptor, frame)
+	return i.ExecuteWithFrame(ref.Object.DefFile, targetMethodName, targetDescriptor, frame, false)
 }
 
 func (i *InterpretedExecutionEngine) bcodeLdc(def *class.DefFile, frame *MethodStackFrame, codeAttr *class.CodeAttr) error {
@@ -1315,7 +1315,19 @@ func (i *InterpretedExecutionEngine) findCodeAttr(method *class.MethodInfo) (*cl
 // def: 当前class定义
 // methodName: 目标方法简单名
 // methodDescriptor: 目标方法描述符
-func (i *InterpretedExecutionEngine) findMethod(def *class.DefFile, methodName string, methodDescriptor string) (*class.MethodInfo, error) {
+// queryVTable: 是否只在虚方法表中查找
+func (i *InterpretedExecutionEngine) findMethod(def *class.DefFile, methodName string, methodDescriptor string, queryVTable bool) (*class.MethodInfo, error) {
+	if queryVTable {
+		// 直接从虚方法表中查找
+		for _, item := range def.VTable {
+			if item.MethodName == methodName && item.MethodDescriptor == methodDescriptor {
+				return item.MethodInfo, nil
+			}
+		}
+
+		return nil, fmt.Errorf("method '%s' not found in VTable", methodName)
+	}
+
 	currentClassDef := def
 	for {
 		//className := currentClassDef.ExtractFullClassName()
