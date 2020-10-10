@@ -1,4 +1,5 @@
 # Mini-JVM
+![build](https://travis-ci.org/wanghongfei/mini-jvm.svg?branch=master)
 
 使用Go实现的Java虚拟机(不完整)，解释执行，仅学习JVM使用；
 

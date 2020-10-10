@@ -9,3 +9,4 @@ install:
 
 script:
   - go build
+  - go test -v github.com/wanghongfei/mini-jvm/vm  github.com/wanghongfei/mini-jvm/utils
