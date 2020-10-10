@@ -61,6 +61,8 @@ func TestHelloMethod(t *testing.T) {
 }
 
 func TestClassExtend(t *testing.T) {
+	utils.InitLog(true)
+
 	miniJvm, err := NewMiniJvm("com.fh.ClassExtendTest", []string{"../testcase/classes", "../mini-lib/classes", rtJarPath})
 	if nil != err {
 		t.Fatal(err)
@@ -81,6 +83,8 @@ func TestClassExtend(t *testing.T) {
 }
 
 func TestRecursion(t *testing.T) {
+	utils.InitLog(true)
+
 	miniJvm, err := NewMiniJvm("com.fh.RecursionTest", []string{"../testcase/classes", "../mini-lib/classes", rtJarPath})
 	if nil != err {
 		t.Fatal(err)

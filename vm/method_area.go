@@ -57,6 +57,8 @@ func NewMethodArea(jvm *MiniJvm, classpaths []string, ignoredClasses []string) (
 // 从classpath中加载一个类
 // fullname: 全限定性名
 func (m *MethodArea) LoadClass(fullyQualifiedName string) (*class.DefFile, error) {
+	utils.LogInfoPrintf("load class: %s", fullyQualifiedName)
+
 	// 查忽略列表
 	if _, ok := m.IgnoredClasses[fullyQualifiedName]; ok {
 		// 此class被忽略
@@ -68,6 +70,7 @@ func (m *MethodArea) LoadClass(fullyQualifiedName string) (*class.DefFile, error
 	targetClassDef, ok := m.ClassMap[fullyQualifiedName]
 	m.ClassMapLock.RUnlock()
 	if ok {
+		utils.LogInfoPrintf("load class from cache: %s", fullyQualifiedName)
 		return targetClassDef, nil
 	}
 

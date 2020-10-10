@@ -8,3 +8,4 @@ out/
 go.sum
 
 mini-lib-class
+*.log
