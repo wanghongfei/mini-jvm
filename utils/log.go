@@ -17,7 +17,6 @@ func InitLog(enableConsoleLogParam bool) {
 		consoleLog = log.New(os.Stdout, "[Mini-JVM] ", log.Ldate|log.Ltime)
 	}
 
-	createVmErrorLog()
 }
 
 func LogInfoPrint(v ...interface{}) {
@@ -39,21 +38,31 @@ func LogInfoPrintf(format string, v ...interface{}) {
 }
 
 func LogErrorPrint(v ...interface{}) {
+	createVmErrorLog()
 	fileLog.Print(v...)
+
 	LogInfoPrint(v...)
 }
 
 func LogErrorPrintln(v ...interface{}) {
+	createVmErrorLog()
 	fileLog.Println(v...)
+
 	LogInfoPrintln(v...)
 }
 
 func LogErrorPrintf(format string, v ...interface{}) {
+	createVmErrorLog()
 	fileLog.Printf(format, v...)
+
 	LogInfoPrintf(format, v...)
 }
 
 func createVmErrorLog() {
+	if nil != fileLog {
+		return
+	}
+
 	logFile, err := os.OpenFile("vm-error.log", os.O_RDWR | os.O_CREATE | os.O_APPEND, 0766)
 	if nil != err {
 		panic(err)
