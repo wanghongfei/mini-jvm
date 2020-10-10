@@ -41,13 +41,13 @@ go build -o mini-jvm
 运行：
 
 ```shell
-./mini-jvm -main [主类全限定性名，例如cn.fh.XXX] -classpath [类路径,可以是目录也可以是jar包路径, 多个用逗号分隔] [命令行参数,可选]
+./mini-jvm -main [主类全限定性名，例如cn.fh.XXX] -classpath [类路径,可以是目录也可以是jar包路径, 多个用逗号分隔] -consoleLog [是否在控制台打印JVM系统日志,默认false,可选] [命令行参数,可选]
 ```
 
 由于Mini-JVM的控制台输出和线程用的是私有类而JDK中`rt.jar`中的类，所以需要在classpath中指定`mini-lib`所在路径，例如：
 
 ```shell
-./mini-jvm -main x.y.x.XXXMain -classpath mini-lib,classpath1,classpath2 cmd1 cmd2
+./mini-jvm -main com.fh.IfTest -classpath testcase/classes,mini-lib/classes,/Library/Java/JavaVirtualMachines/jdk1.8.0_181.jdk/Contents/Home/jre/lib/rt.jar -consoleLog true
 ```
 
 单元测试`mini_jvm_test.go`中的case需要先修改`rtJarPath`为自己机器上`rt.jar`的路径后才能跑通：

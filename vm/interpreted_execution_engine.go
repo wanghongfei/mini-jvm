@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"github.com/wanghongfei/mini-jvm/utils"
 	"github.com/wanghongfei/mini-jvm/vm/accflag"
 	"github.com/wanghongfei/mini-jvm/vm/bcode"
 	"github.com/wanghongfei/mini-jvm/vm/class"
@@ -31,6 +32,7 @@ func (i *InterpretedExecutionEngine) ExecuteWithDescriptor(def *class.DefFile, m
 
 func (i *InterpretedExecutionEngine) ExecuteWithFrame(def *class.DefFile, methodName string, methodDescriptor string, lastFrame *MethodStackFrame, queryVTable bool) error {
 	// fmt.Printf("[DEBUG] %v: %v\n", methodName, methodDescriptor)
+	utils.LogInfoPrintf("execute method %s:%s", methodName, methodDescriptor)
 
 	// 查找方法
 	method, err := i.findMethod(def, methodName, methodDescriptor, queryVTable)
@@ -220,6 +222,7 @@ func (i *InterpretedExecutionEngine) executeInFrame(def *class.DefFile, codeAttr
 		// 取出pc指向的字节码
 		byteCode := codeAttr.Code[frame.pc]
 		// fmt.Printf("[DEBUG] byte code: %v\n", bcode.ToName(byteCode))
+		utils.LogInfoPrintf("execute byte code: %v", bcode.ToName(byteCode))
 
 		exitLoop := false
 
