@@ -1155,6 +1155,8 @@ func (i *InterpretedExecutionEngine) bcodeAthrow(def *class.DefFile, frame *Meth
 		if targetExpFullName == thisExpFullName {
 			// 修改pc实现跳转
 			frame.pc = int(expTable.HandlerPc) - 1
+			// 清空栈
+			frame.opStack.Clean()
 			return nil
 		}
 	}

@@ -18,6 +18,16 @@ func NewOpStack(maxDepth int) *OpStack {
 	}
 }
 
+// 清空栈
+func (s *OpStack) Clean() {
+
+	s.topIndex = -1
+
+	for ix := range s.elems {
+		s.elems[ix] = nil
+	}
+}
+
 // 压栈
 func (s *OpStack) Push(data interface{}) bool {
 	if s.topIndex == len(s.elems) - 1 {
