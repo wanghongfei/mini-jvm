@@ -215,6 +215,21 @@ func (i *InterpretedExecutionEngine) ExecuteWithFrame(def *class.DefFile, method
 	return i.executeInFrame(def, codeAttr, frame, lastFrame, methodName, methodDescriptor)
 }
 
+func (i *InterpretedExecutionEngine) executeWithFrameAndExceptionAdvice(def *class.DefFile, methodName string,
+	methodDescriptor string, lastFrame *MethodStackFrame, queryVTable bool, codeAttr *class.CodeAttr) error {
+
+	// 执行方法
+	err := i.ExecuteWithFrame(def, methodName, methodDescriptor, lastFrame, queryVTable)
+	// 判断是否抛出了异常到此层面
+	if exceptionErr, ok := err.(*ExceptionThrownError); ok {
+		// 查异常表修改pc
+		return i.athrowJumpToTargetPc(def, lastFrame, codeAttr,
+			exceptionErr.ExceptionRef.Object.DefFile.FullClassName, exceptionErr.ExceptionRef)
+	}
+
+	return err
+}
+
 func (i *InterpretedExecutionEngine) executeInFrame(def *class.DefFile, codeAttr *class.CodeAttr, frame *MethodStackFrame, lastFrame *MethodStackFrame, methodName string, methodDescriptor string) error {
 
 	isWideStatus := false
@@ -953,7 +968,7 @@ func (i *InterpretedExecutionEngine) invokeStatic(def *class.DefFile, frame *Met
 	}
 
 	// 调用
-	return i.ExecuteWithFrame(targetDef, methodName, descriptor, frame, false)
+	return i.executeWithFrameAndExceptionAdvice(targetDef, methodName, descriptor, frame, false, codeAttr)
 }
 
 func (i *InterpretedExecutionEngine) invokeSpecial(def *class.DefFile, frame *MethodStackFrame, codeAttr *class.CodeAttr) error {
@@ -992,7 +1007,7 @@ func (i *InterpretedExecutionEngine) invokeSpecial(def *class.DefFile, frame *Me
 	}
 
 	// 调用
-	return i.ExecuteWithFrame(targetDef, methodName, descriptor, frame, false)
+	return i.executeWithFrameAndExceptionAdvice(targetDef, methodName, descriptor, frame, false, codeAttr)
 }
 
 func (i *InterpretedExecutionEngine) invokeVirtual(def *class.DefFile, frame *MethodStackFrame, codeAttr *class.CodeAttr) error {
@@ -1038,7 +1053,7 @@ func (i *InterpretedExecutionEngine) invokeVirtual(def *class.DefFile, frame *Me
 
 
 	// 调用
-	return i.ExecuteWithFrame(targetDef, methodName, descriptor, frame, true)
+	return i.executeWithFrameAndExceptionAdvice(targetDef, methodName, descriptor, frame, true, codeAttr)
 }
 
 func (i *InterpretedExecutionEngine) invokeInterface(def *class.DefFile, frame *MethodStackFrame, codeAttr *class.CodeAttr) error {
@@ -1076,7 +1091,7 @@ func (i *InterpretedExecutionEngine) invokeInterface(def *class.DefFile, frame *
 
 	// 出栈取出对象引用
 	ref, _ := frame.opStack.GetUntilObject()
-	return i.ExecuteWithFrame(ref.Object.DefFile, targetMethodName, targetDescriptor, frame, false)
+	return i.executeWithFrameAndExceptionAdvice(ref.Object.DefFile, targetMethodName, targetDescriptor, frame, false, codeAttr)
 }
 
 func (i *InterpretedExecutionEngine) bcodeLdc(def *class.DefFile, frame *MethodStackFrame, codeAttr *class.CodeAttr) error {
@@ -1152,10 +1167,26 @@ func (i *InterpretedExecutionEngine) athrowJumpToTargetPc(def *class.DefFile, fr
 	codeAttr *class.CodeAttr, thrownExceptionFullName string, thrownExceptionRef *class.Reference) error {
 
 	// 查异常表
+	if 0 == codeAttr.ExceptionTableLength {
+		// 没有异常表
+		return NewExceptionThrownError(thrownExceptionRef)
+	}
+
+	// 遍历异常表
 	for _, expTable := range codeAttr.ExceptionTable {
 		// 确保当前pc是在范围内
 		if frame.pc < int(expTable.StartPc) || frame.pc > int(expTable.EndPc) {
 			continue
+		}
+
+		if 0 == expTable.CatchType {
+			// 没有catch语句, 直接跳转pc
+			frame.pc = int(expTable.HandlerPc) - 1
+			// 清空栈
+			frame.opStack.Clean()
+			// 将异常引用压回
+			frame.opStack.Push(thrownExceptionRef)
+			return nil
 		}
 
 		// 取出目标异常类型

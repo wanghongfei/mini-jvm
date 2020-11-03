@@ -207,8 +207,8 @@ func TestInterface(t *testing.T) {
 	}
 }
 
-func TestException(t *testing.T) {
-	miniJvm, err := NewMiniJvm("com.fh.ExceptionTest", []string{"../testcase/classes", "../mini-lib/classes", rtJarPath})
+func TestExceptionCase1(t *testing.T) {
+	miniJvm, err := NewMiniJvm("com.fh.ExceptionCase1Test", []string{"../testcase/classes", "../mini-lib/classes", rtJarPath})
 	if nil != err {
 		t.Fatal(err)
 	}
@@ -226,6 +226,66 @@ func TestException(t *testing.T) {
 		t.FailNow()
 	}
 	if 30 != miniJvm.DebugPrintHistory[2] {
+		t.FailNow()
+	}
+}
+
+func TestExceptionCase2(t *testing.T) {
+	miniJvm, err := NewMiniJvm("com.fh.ExceptionCase2Test", []string{"../testcase/classes", "../mini-lib/classes", rtJarPath})
+	if nil != err {
+		t.Fatal(err)
+	}
+
+	err = miniJvm.Start()
+	if _, ok := err.(*ExceptionThrownError); !ok {
+		t.Fatal(err)
+	}
+
+	// assert
+	if 10 != miniJvm.DebugPrintHistory[0] {
+		t.FailNow()
+	}
+	if 30 != miniJvm.DebugPrintHistory[1] {
+		t.FailNow()
+	}
+}
+
+func TestExceptionCase3(t *testing.T) {
+	miniJvm, err := NewMiniJvm("com.fh.ExceptionCase3Test", []string{"../testcase/classes", "../mini-lib/classes", rtJarPath})
+	if nil != err {
+		t.Fatal(err)
+	}
+
+	err = miniJvm.Start()
+	if _, ok := err.(*ExceptionThrownError); !ok {
+		t.Fatal(err)
+	}
+
+	// assert
+	if 1 != len(miniJvm.DebugPrintHistory) {
+		t.FailNow()
+	}
+	if 10 != miniJvm.DebugPrintHistory[0] {
+		t.FailNow()
+	}
+}
+
+func TestExceptionCase4(t *testing.T) {
+	miniJvm, err := NewMiniJvm("com.fh.ExceptionCase4Test", []string{"../testcase/classes", "../mini-lib/classes", rtJarPath})
+	if nil != err {
+		t.Fatal(err)
+	}
+
+	err = miniJvm.Start()
+	if nil != err {
+		t.Fatal(err)
+	}
+
+	// assert
+	if 1 != len(miniJvm.DebugPrintHistory) {
+		t.FailNow()
+	}
+	if 20 != miniJvm.DebugPrintHistory[0] {
 		t.FailNow()
 	}
 }

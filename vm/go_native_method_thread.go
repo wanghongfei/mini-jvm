@@ -2,6 +2,7 @@ package vm
 
 import (
 	"fmt"
+	"github.com/wanghongfei/mini-jvm/utils"
 	"github.com/wanghongfei/mini-jvm/vm/class"
 	"time"
 )
@@ -52,7 +53,13 @@ func (t *MiniThread) Start() {
 
 		err := t.Jvm.ExecutionEngine.ExecuteWithFrame(t.JavaObjRef.Object.DefFile, "run", "()V", frame, false)
 		if nil != err {
-			fmt.Printf("failed to execute native function 'ExecuteInThread': %v\n", err)
+			if expRef, ok := err.(*ExceptionThrownError); ok {
+				// 底层抛出了没有捕获的异常
+				utils.LogErrorPrintf("thread exit due to thrown exception: %v\n", expRef.ExceptionRef.Object.DefFile.FullClassName)
+				return
+			}
+
+			utils.LogInfoPrintf("failed to execute native function 'ExecuteInThread': %v\n", err)
 		}
 	}()
 }
