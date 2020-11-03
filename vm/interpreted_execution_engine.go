@@ -876,6 +876,10 @@ func (i *InterpretedExecutionEngine) executeInFrame(def *class.DefFile, codeAttr
 		case bcode.Athrow:
 			err := i.bcodeAthrow(def, frame, codeAttr)
 			if nil != err {
+				if _, ok := err.(*ExceptionThrownError); ok {
+					return err
+				}
+
 				return fmt.Errorf("failed to execute 'athrow': %w", err)
 			}
 
@@ -1139,6 +1143,14 @@ func (i *InterpretedExecutionEngine) bcodeAthrow(def *class.DefFile, frame *Meth
 	thisExpInfo, _ := ref.Object.DefFile.ConstPool[ref.Object.DefFile.ThisClass].(*class.ClassInfoConstInfo)
 	thisExpFullName := ref.Object.DefFile.ConstPool[thisExpInfo.FullClassNameIndex].(*class.Utf8InfoConst).String()
 
+	return i.athrowJumpToTargetPc(def, frame, codeAttr, thisExpFullName, ref)
+}
+
+// 查异常表,修改pc为需要跳转的值;
+// 如果没有找到匹配的异常，返回ExceptionThrownError
+func (i *InterpretedExecutionEngine) athrowJumpToTargetPc(def *class.DefFile, frame *MethodStackFrame,
+	codeAttr *class.CodeAttr, thrownExceptionFullName string, thrownExceptionRef *class.Reference) error {
+
 	// 查异常表
 	for _, expTable := range codeAttr.ExceptionTable {
 		// 确保当前pc是在范围内
@@ -1152,16 +1164,20 @@ func (i *InterpretedExecutionEngine) bcodeAthrow(def *class.DefFile, frame *Meth
 		targetExpFullName := def.ConstPool[targetExpInfo.FullClassNameIndex].(*class.Utf8InfoConst).String()
 
 		// 判断跟栈顶异常是否匹配
-		if targetExpFullName == thisExpFullName {
+		if targetExpFullName == thrownExceptionFullName {
 			// 修改pc实现跳转
 			frame.pc = int(expTable.HandlerPc) - 1
 			// 清空栈
 			frame.opStack.Clean()
+			// 将异常引用压回
+			frame.opStack.Push(thrownExceptionRef)
+
 			return nil
 		}
 	}
 
-	return nil
+	// 异常表中没找到跑出的异常
+	return NewExceptionThrownError(thrownExceptionRef)
 }
 
 // 读取static字段
