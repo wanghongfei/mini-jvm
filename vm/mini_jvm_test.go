@@ -7,10 +7,10 @@ import (
 )
 
 // 改成自己电脑中rt.jar的路径
-var rtJarPath = "/Library/Java/JavaVirtualMachines/jdk1.8.0_181.jdk/Contents/Home/jre/lib/rt.jar"
+var rtJarPath = "/Library/Java/JavaVirtualMachines/zulu-8.jdk/Contents/Home/jre/lib/rt.jar"
 
 func TestHelloNative(t *testing.T) {
-	miniJvm, err := NewMiniJvm("com.fh.ForLoopPrintTest", []string{"../testcase/classes", "../mini-lib/classes", "/Library/Java/JavaVirtualMachines/jdk1.8.0_181.jdk/Contents/Home/jre/lib/rt.jar"})
+	miniJvm, err := NewMiniJvm("com.fh.ForLoopPrintTest", []string{"../testcase/classes", "../mini-lib/classes", rtJarPath})
 	if nil != err {
 		t.Fatal(err)
 	}
