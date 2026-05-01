@@ -109,6 +109,8 @@ const (
 	Ireturn = 0xac
 
 	Wide = 0xc4
+
+	Ifnull    = 0xc6
 	Ifnonnull = 0xc7
 )
 
@@ -294,6 +296,8 @@ func ToName(code byte) string {
 	case Wide:
 		return "wide"
 
+	case Ifnull:
+		return "ifnull"
 	case Ifnonnull:
 		return "ifnonnull"
 

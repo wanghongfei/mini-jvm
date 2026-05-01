@@ -406,3 +406,31 @@ func TestReflection(t *testing.T) {
 	}
 
 }
+func TestIfNull(t *testing.T) {
+	miniJvm, err := NewMiniJvm("com.fh.IfNullTest", []string{"../testcase/classes", "../mini-lib/classes", rtJarPath})
+	if nil != err {
+		t.Fatal(err)
+	}
+
+	err = miniJvm.Start()
+	if nil != err {
+		t.Fatal(err)
+	}
+
+	// ifnull on non-null: print 1
+	if 1 != miniJvm.DebugPrintHistory[0] {
+		t.Fatalf("expected 1, got %v", miniJvm.DebugPrintHistory[0])
+	}
+	// ifnull on null: print 2
+	if 2 != miniJvm.DebugPrintHistory[1] {
+		t.Fatalf("expected 2, got %v", miniJvm.DebugPrintHistory[1])
+	}
+	// ifnonnull on non-null string: print 3
+	if 3 != miniJvm.DebugPrintHistory[2] {
+		t.Fatalf("expected 3, got %v", miniJvm.DebugPrintHistory[2])
+	}
+	// ifnull on null string: print 4
+	if 4 != miniJvm.DebugPrintHistory[3] {
+		t.Fatalf("expected 4, got %v", miniJvm.DebugPrintHistory[3])
+	}
+}
